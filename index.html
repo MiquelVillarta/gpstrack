@@ -63,101 +63,101 @@
   <!-- Leaflet JS -->
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 
-  <script>
-    // CREDENCIALES DE SUPABASE
-    const SUPABASE_URL = 'https://ghpiqdmhlhfyeginefnf.supabase.co';
-    const SUPABASE_KEY = 'sb_publishable_0CQFFsTpM2rw7_mMEo0IUw_1NTVEnEE';
-    const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+ <script>
+  const SUPABASE_URL = 'https://ghpiqdmhlhfyeginefnf.supabase.co';
+  const SUPABASE_KEY = 'sb_publishable_0CQFFsTpM2rw7_mMEo0IUw_1NTVEnEE';
+  const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
-    // Inicializar Mapa centrado en una posición inicial
+  // Inicializar Mapa centrado en una posición inicial
     const map = L.map('map').setView([40.4167, -3.7037], 6);
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
       maxZoom: 19,
       attribution: '© OpenStreetMap'
     }).addTo(map);
 
-    const markers = {};
-    const pilotsData = {};
+  const markers = {};
+  const pilotsData = {};
 
-    // Cargar posiciones iniciales
-    async function loadInitialLocations() {
-      const { data, error } = await supabaseClient
-        .from('pilots_locations')
-        .select('*');
+  async function loadInitialLocations() {
+    const { data, error } = await supabaseClient
+      .from('pilots_locations')
+      .select('*');
 
-      if (data) {
-        data.forEach(updatePilot);
+    if (data) {
+      data.forEach(updatePilot);
+    }
+  }
+
+  function updatePilot(pilot) {
+    const { pilot_id, name, latitude, longitude, altitude, speed } = pilot;
+    pilotsData[pilot_id] = pilot;
+
+    const displayName = name || pilot_id;
+    const speedFixed = speed ? speed.toFixed(1) : "0.0";
+    const altFixed = altitude ? altitude.toFixed(0) : "0";
+
+    if (markers[pilot_id]) {
+      markers[pilot_id].setLatLng([latitude, longitude]);
+    } else {
+      markers[pilot_id] = L.marker([latitude, longitude]).addTo(map);
+      map.setView([latitude, longitude], 14);
+    }
+
+    // Popup del mapa con el NOMBRE REAL
+    markers[pilot_id].bindPopup(`
+      <b style="font-size: 1.1em">${displayName}</b><br>
+      Velocidad: <b>${speedFixed} km/h</b><br>
+      Altitud: <b>${altFixed} m</b>
+    `);
+
+    renderPilotsList();
+  }
+
+  function renderPilotsList() {
+    const listContainer = document.getElementById('pilots-list');
+    const filterText = document.getElementById('search').value.toLowerCase();
+    listContainer.innerHTML = '';
+
+    Object.values(pilotsData).forEach(pilot => {
+      const displayName = pilot.name || pilot.pilot_id;
+
+      if (displayName.toLowerCase().includes(filterText) || pilot.pilot_id.toLowerCase().includes(filterText)) {
+        const card = document.createElement('div');
+        card.className = 'pilot-card';
+        card.onclick = () => {
+          map.flyTo([pilot.latitude, pilot.longitude], 16);
+          markers[pilot.pilot_id].openPopup();
+        };
+
+        card.innerHTML = `
+          <div class="pilot-name">${displayName}</div>
+          <div class="pilot-stats">
+            ⚡ ${pilot.speed ? pilot.speed.toFixed(1) : 0} km/h | 🏔️ ${pilot.altitude ? pilot.altitude.toFixed(0) : 0} m
+          </div>
+        `;
+        listContainer.appendChild(card);
       }
-    }
+    });
+  }
 
-    // Actualizar o crear marcador y tarjeta en lista
-    function updatePilot(pilot) {
-      const { pilot_id, latitude, longitude, altitude, speed, updated_at } = pilot;
-      pilotsData[pilot_id] = pilot;
+  function filterPilots() {
+    renderPilotsList();
+  }
 
-      const speedFixed = speed ? speed.toFixed(1) : "0.0";
-      const altFixed = altitude ? altitude.toFixed(0) : "0";
-
-      // 1. Actualizar/Crear Marcador en el mapa
-      if (markers[pilot_id]) {
-        markers[pilot_id].setLatLng([latitude, longitude]);
-      } else {
-        markers[pilot_id] = L.marker([latitude, longitude]).addTo(map);
-        map.setView([latitude, longitude], 14); // Enfocar al primer piloto
+  supabaseClient
+    .channel('schema-db-changes')
+    .on(
+      'postgres_changes',
+      { event: '*', schema: 'public', table: 'pilots_locations' },
+      (payload) => {
+        updatePilot(payload.new);
       }
+    )
+    .subscribe();
 
-      markers[pilot_id].bindPopup(`
-        <b>${pilot_id}</b><br>
-        Velocidad: <b>${speedFixed} km/h</b><br>
-        Altitud: <b>${altFixed} m</b>
-      `);
+  loadInitialLocations();
+</script>
 
-      // 2. Renderizar lista en Sidebar
-      renderPilotsList();
-    }
 
-    function renderPilotsList() {
-      const listContainer = document.getElementById('pilots-list');
-      const filterText = document.getElementById('search').value.toLowerCase();
-      listContainer.innerHTML = '';
-
-      Object.values(pilotsData).forEach(pilot => {
-        if (pilot.pilot_id.toLowerCase().includes(filterText)) {
-          const card = document.createElement('div');
-          card.className = 'pilot-card';
-          card.onclick = () => {
-            map.flyTo([pilot.latitude, pilot.longitude], 16);
-            markers[pilot.pilot_id].openPopup();
-          };
-
-          card.innerHTML = `
-            <div class="pilot-name">${pilot.pilot_id}</div>
-            <div class="pilot-stats">
-              ⚡ ${pilot.speed ? pilot.speed.toFixed(1) : 0} km/h | 🏔️ ${pilot.altitude ? pilot.altitude.toFixed(0) : 0} m
-            </div>
-          `;
-          listContainer.appendChild(card);
-        }
-      });
-    }
-
-    function filterPilots() {
-      renderPilotsList();
-    }
-
-    // SUSCRIPCIÓN EN TIEMPO REAL CON SUPABASE REALTIME
-    supabaseClient
-      .channel('schema-db-changes')
-      .on(
-        'postgres_changes',
-        { event: '*', schema: 'public', table: 'pilots_locations' },
-        (payload) => {
-          updatePilot(payload.new);
-        }
-      )
-      .subscribe();
-
-    loadInitialLocations();
-  </script>
 </body>
 </html>
