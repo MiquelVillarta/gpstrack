@@ -1,4 +1,4 @@
-<!DOCTYPE1 html>
+<!DOCTYPE html>
 <html lang="es">
 <head>
   <meta charset="UTF-8">
@@ -55,10 +55,54 @@
       border-bottom: 1px solid #2a2a35;
     }
 
+    .sidebar-header-top {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 12px;
+    }
+
     .sidebar-header h2 {
       font-size: 1.1rem;
-      margin-bottom: 10px;
       color: #00d2ff;
+      margin: 0;
+    }
+
+    /* BOTÓN DENTRO DEL SIDEBAR */
+    .btn-hide-panel {
+      background-color: #2a2a35;
+      color: #fff;
+      border: 1px solid #3a3a4c;
+      border-radius: 4px;
+      padding: 4px 8px;
+      cursor: pointer;
+      font-size: 12px;
+      transition: background-color 0.2s;
+    }
+
+    .btn-hide-panel:hover {
+      background-color: #3a3a4c;
+    }
+
+    /* BOTÓN FLOTANTE PARA REABRIR CUANDO ESTÁ OCULTO */
+    #show-sidebar-btn {
+      display: none;
+      position: absolute;
+      top: 10px;
+      left: 10px;
+      z-index: 1100;
+      background-color: #1e1e24;
+      color: #fff;
+      border: 1px solid #3a3a4c;
+      border-radius: 6px;
+      padding: 8px 12px;
+      cursor: pointer;
+      font-weight: bold;
+      box-shadow: 2px 2px 8px rgba(0,0,0,0.4);
+    }
+
+    #show-sidebar-btn:hover {
+      background-color: #2a2a35;
     }
 
     .search-box {
@@ -139,31 +183,6 @@
       margin-top: 2px;
     }
 
-    /* BOTÓN PARA OCULTAR/MOSTRAR PANEL */
-    #toggle-sidebar-btn {
-      position: absolute;
-      top: 15px;
-      left: 330px;
-      z-index: 1100;
-      background-color: #1e1e24;
-      color: #fff;
-      border: 1px solid #3a3a4c;
-      border-radius: 6px;
-      padding: 8px 12px;
-      cursor: pointer;
-      font-weight: bold;
-      box-shadow: 2px 2px 8px rgba(0,0,0,0.4);
-      transition: left 0.3s ease, background-color 0.2s;
-    }
-
-    #toggle-sidebar-btn:hover {
-      background-color: #2a2a35;
-    }
-
-    #app-container.sidebar-closed #toggle-sidebar-btn {
-      left: 10px;
-    }
-
     /* MAPA */
     #map {
       flex: 1;
@@ -198,13 +217,17 @@
 <body>
 
 <div id="app-container">
-  <!-- BOTÓN COLAPSAR BARRA LATERAL -->
-  <button id="toggle-sidebar-btn" onclick="toggleSidebar()">◀ Ocultar Panel</button>
+  <!-- BOTÓN FLOTANTE SÓLO VISIBLE CUANDO EL PANEL ESTÁ OCULTO -->
+  <button id="show-sidebar-btn" onclick="toggleSidebar()">▶ Mostrar Panel</button>
 
   <!-- BARRA LATERAL -->
   <div id="sidebar">
     <div class="sidebar-header">
-      <h2>Pilotos en Vivo</h2>
+      <div class="sidebar-header-top">
+        <h2>Pilotos en Vivo</h2>
+        <button class="btn-hide-panel" onclick="toggleSidebar()">◀ Ocultar</button>
+      </div>
+      
       <input type="text" id="search" class="search-box" placeholder="Buscar piloto..." oninput="filterPilots()">
       
       <div class="selection-controls">
@@ -230,13 +253,38 @@
   const SUPABASE_KEY = 'sb_publishable_0CQFFsTpM2rw7_mMEo0IUw_1NTVEnEE';
   const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
-  const map = L.map('map').setView([40.4167, -3.7037], 6);
+  // DECLARACIÓN DE CAPAS DE MAPA
+  const osmLayer = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    maxZoom: 19,
+    attribution: '© OpenStreetMap contributors'
+  });
 
-  L.tileLayer('https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png', {
+  const openTopoLayer = L.tileLayer('https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png', {
     maxZoom: 17,
     subdomains: 'abc',
     attribution: 'Map data: © OpenStreetMap, SRTM | Style: © OpenTopoMap'
-  }).addTo(map);
+  });
+
+  const esriSatelliteLayer = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
+    maxZoom: 18,
+    attribution: 'Tiles &copy; Esri &mdash; Source: Esri, i-cubed, USDA, USGS, AEX, GeoEye, Getmapping, Aerogrid, IGN, IGP, UPR-EGP, and the GIS User Community'
+  });
+
+  // INICIALIZACIÓN DEL MAPA (por defecto con OpenTopoMap)
+  const map = L.map('map', {
+    center: [40.4167, -3.7037],
+    zoom: 6,
+    layers: [openTopoLayer]
+  });
+
+  // CONTROL SELECTOR DE CAPAS (Esquina superior derecha)
+  const baseMaps = {
+    "OpenTopoMap": openTopoLayer,
+    "OpenStreetMap": osmLayer,
+    "Esri Satèl·lit": esriSatelliteLayer
+  };
+
+  L.control.layers(baseMaps, null, { position: 'topright' }).addTo(map);
 
   const markers = {};
   const polylines = {};
@@ -250,18 +298,18 @@
   function toggleSidebar() {
     const sidebar = document.getElementById('sidebar');
     const container = document.getElementById('app-container');
-    const btn = document.getElementById('toggle-sidebar-btn');
+    const showBtn = document.getElementById('show-sidebar-btn');
 
     sidebar.classList.toggle('collapsed');
     container.classList.toggle('sidebar-closed');
 
     if (sidebar.classList.contains('collapsed')) {
-      btn.innerText = '▶ Mostrar Panel';
+      showBtn.style.display = 'block';
     } else {
-      btn.innerText = '◀ Ocultar Panel';
+      showBtn.style.display = 'none';
     }
 
-    setTimeout(() => { map.invalidateSize(); }, 300); // Recalcular tamaño del mapa
+    setTimeout(() => { map.invalidateSize(); }, 300);
   }
 
   // CARGA INICIAL DE POSICIONES
@@ -286,7 +334,6 @@
 
     pilotsData[pilot_id] = point;
 
-    // Por defecto, si es un piloto nuevo, se muestra visible
     if (visiblePilots[pilot_id] === undefined) {
       visiblePilots[pilot_id] = true;
     }
@@ -342,7 +389,6 @@
       Altitud: <b>${altitude ? altitude.toFixed(0) : 0} m</b>
     `);
 
-    // Sincronizar elementos visibles en el mapa
     updatePilotVisibilityOnMap(pilot_id);
     renderPilotsList();
   }
@@ -430,7 +476,6 @@
   function focusPilot(pilot_id) {
     const pilot = pilotsData[pilot_id];
     if (pilot && markers[pilot_id]) {
-      // Si el piloto estaba oculto, lo volvemos a mostrar automáticamente al hacer clic en su tarjeta
       if (!visiblePilots[pilot_id]) {
         togglePilotVisibility(pilot_id, true);
         renderPilotsList();
