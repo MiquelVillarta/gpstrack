@@ -63,35 +63,75 @@
   <!-- Leaflet JS -->
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 
- <script>
+<script>
   const SUPABASE_URL = 'https://ghpiqdmhlhfyeginefnf.supabase.co';
   const SUPABASE_KEY = 'sb_publishable_0CQFFsTpM2rw7_mMEo0IUw_1NTVEnEE';
   const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
-  // Inicializar Mapa centrado en una posición inicial
-    const map = L.map('map').setView([40.4167, -3.7037], 6);
-    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-      maxZoom: 19,
-      attribution: '© OpenStreetMap'
-    }).addTo(map);
+  const map = L.map('map').setView([40.4167, -3.7037], 6);
+  
+  L.tileLayer('https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png', {
+    maxZoom: 17,
+    subdomains: 'abc',
+    attribution: 'Map data: © OpenStreetMap contributors, SRTM | Map style: © OpenTopoMap (CC-BY-SA)'
+  }).addTo(map);
 
   const markers = {};
+  const polylines = {};
+  const pilotTracks = {}; // Guarda { [pilot_id]: [ {lat, lng, time}, ... ] }
   const pilotsData = {};
 
+  const FIVE_MINUTES_MS = 5 * 60 * 1000;
+
   async function loadInitialLocations() {
+    // Cargar ubicaciones de los últimos 5 minutos al iniciar la web
+    const fiveMinutesAgo = new Date(Date.now() - FIVE_MINUTES_MS).toISOString();
+    
     const { data, error } = await supabaseClient
       .from('pilots_locations')
-      .select('*');
+      .select('*')
+      .gte('updated_at', fiveMinutesAgo)
+      .order('updated_at', { ascending: true });
 
     if (data) {
-      data.forEach(updatePilot);
+      data.forEach(processNewPoint);
     }
   }
 
-  function updatePilot(pilot) {
-    const { pilot_id, name, latitude, longitude, altitude, speed } = pilot;
-    pilotsData[pilot_id] = pilot;
+  function processNewPoint(point) {
+    const { pilot_id, name, latitude, longitude, altitude, speed, updated_at } = point;
+    const pointTime = new Date(updated_at).getTime();
 
+    // 1. Guardar o actualizar la información actual del piloto
+    pilotsData[pilot_id] = point;
+
+    // 2. Inicializar el array de historial si no existe
+    if (!pilotTracks[pilot_id]) {
+      pilotTracks[pilot_id] = [];
+    }
+
+    // Añadir el nuevo punto
+    pilotTracks[pilot_id].push({ lat: latitude, lng: longitude, time: pointTime });
+
+    // 3. Filtrar puntos para mantener SOLO los de los últimos 5 minutos
+    const now = Date.now();
+    pilotTracks[pilot_id] = pilotTracks[pilot_id].filter(p => (now - p.time) <= FIVE_MINUTES_MS);
+
+    // 4. Dibujar o actualizar la línea (Track)
+    const latLngs = pilotTracks[pilot_id].map(p => [p.lat, p.lng]);
+
+    if (polylines[pilot_id]) {
+      polylines[pilot_id].setLatLngs(latLngs);
+    } else {
+      polylines[pilot_id] = L.polyline(latLngs, {
+        color: '#ff3300', // Color rojo para destacar la trayectoria
+        weight: 4,
+        opacity: 0.8,
+        smoothFactor: 1
+      }).addTo(map);
+    }
+
+    // 5. Dibujar o actualizar el marcador actual
     const displayName = name || pilot_id;
     const speedFixed = speed ? speed.toFixed(1) : "0.0";
     const altFixed = altitude ? altitude.toFixed(0) : "0";
@@ -103,7 +143,6 @@
       map.setView([latitude, longitude], 14);
     }
 
-    // Popup del mapa con el NOMBRE REAL
     markers[pilot_id].bindPopup(`
       <b style="font-size: 1.1em">${displayName}</b><br>
       Velocidad: <b>${speedFixed} km/h</b><br>
@@ -144,20 +183,28 @@
     renderPilotsList();
   }
 
+  // Limpieza periódica cada 30 segundos para borrar líneas antiguas de pilotos detenidos
+  setInterval(() => {
+    const now = Date.now();
+    Object.keys(pilotTracks).forEach(pilot_id => {
+      pilotTracks[pilot_id] = pilotTracks[pilot_id].filter(p => (now - p.time) <= FIVE_MINUTES_MS);
+      if (polylines[pilot_id]) {
+        polylines[pilot_id].setLatLngs(pilotTracks[pilot_id].map(p => [p.lat, p.lng]));
+      }
+    });
+  }, 30000);
   supabaseClient
     .channel('schema-db-changes')
     .on(
       'postgres_changes',
-      { event: '*', schema: 'public', table: 'pilots_locations' },
+      { event: 'INSERT', schema: 'public', table: 'pilots_locations' },
       (payload) => {
-        updatePilot(payload.new);
+        processNewPoint(payload.new);
       }
     )
     .subscribe();
-
   loadInitialLocations();
 </script>
-
 
 </body>
 </html>
