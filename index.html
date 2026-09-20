@@ -1,67 +1,229 @@
-<!DOCTYPE html>
+<!DOCTYPE1 html>
 <html lang="es">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Seguimiento en Vivo - Pilotos</title>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Seguimiento en Vivo - Parapente</title>
   
-  <!-- Leaflet CSS (Mapa) -->
+  <!-- Leaflet CSS -->
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
   <!-- Supabase JS -->
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  
+  <!-- Leaflet JS -->
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
   <style>
-    * { box-sizing: border-box; margin: 0; padding: 0; }
-    body { font-family: Arial, sans-serif; display: flex; height: 100vh; background: #121212; color: #fff; }
-    
-    #sidebar {
-      width: 320px;
-      background: #1e1e1e;
-      padding: 15px;
-      display: flex;
-      flex-direction: column;
-      gap: 15px;
-      box-shadow: 2px 0 5px rgba(0,0,0,0.5);
-      z-index: 1000;
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+    body, html {
+      height: 100%;
+      width: 100%;
+      font-family: Arial, sans-serif;
+      overflow: hidden;
     }
 
-    #search {
+    #app-container {
+      display: flex;
+      width: 100vw;
+      height: 100vh;
+      position: relative;
+    }
+
+    /* BARRA LATERAL */
+    #sidebar {
+      width: 320px;
+      height: 100%;
+      background-color: #1e1e24;
+      color: #ffffff;
+      display: flex;
+      flex-direction: column;
+      z-index: 1000;
+      transition: margin-left 0.3s ease;
+      box-shadow: 2px 0 10px rgba(0,0,0,0.5);
+    }
+
+    #sidebar.collapsed {
+      margin-left: -320px; /* Esconde la barra lateral */
+    }
+
+    .sidebar-header {
+      padding: 15px;
+      background-color: #121216;
+      border-bottom: 1px solid #2a2a35;
+    }
+
+    .sidebar-header h2 {
+      font-size: 1.1rem;
+      margin-bottom: 10px;
+      color: #00d2ff;
+    }
+
+    .search-box {
       width: 100%;
-      padding: 10px;
-      border-radius: 5px;
-      border: 1px solid #333;
-      background: #2a2a2a;
+      padding: 8px 12px;
+      border-radius: 6px;
+      border: 1px solid #3a3a4c;
+      background-color: #2a2a35;
       color: #fff;
+      font-size: 14px;
+      margin-bottom: 10px;
+      outline: none;
+    }
+
+    /* CONTROLES DE SELECCIÓN GENERAL */
+    .selection-controls {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 5px 0;
+      font-size: 13px;
+      color: #bbb;
+    }
+
+    .selection-controls label {
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .btn-toggle-all {
+      background: none;
+      border: none;
+      color: #00d2ff;
+      cursor: pointer;
+      font-size: 12px;
+      text-decoration: underline;
+    }
+
+    /* LISTA DE PILOTOS */
+    #pilots-list {
+      flex: 1;
+      overflow-y: auto;
+      padding: 10px;
     }
 
     .pilot-card {
-      background: #2a2a2a;
-      padding: 12px;
-      border-radius: 6px;
-      cursor: pointer;
-      border-left: 4px solid #00e676;
-      transition: background 0.2s;
+      background-color: #2a2a35;
+      border-radius: 8px;
+      padding: 10px;
+      margin-bottom: 8px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      border: 1px solid #3a3a4c;
+      transition: background-color 0.2s;
     }
 
-    .pilot-card:hover { background: #333; }
-    .pilot-name { font-weight: bold; font-size: 1.1em; }
-    .pilot-stats { font-size: 0.85em; color: #bbb; margin-top: 5px; }
+    .pilot-card:hover {
+      background-color: #343444;
+    }
 
-    #map { flex: 1; height: 100%; }
+    .pilot-info {
+      flex: 1;
+      cursor: pointer;
+    }
+
+    .pilot-name {
+      font-weight: bold;
+      font-size: 14px;
+      color: #fff;
+    }
+
+    .pilot-stats {
+      font-size: 12px;
+      color: #aaa;
+      margin-top: 2px;
+    }
+
+    /* BOTÓN PARA OCULTAR/MOSTRAR PANEL */
+    #toggle-sidebar-btn {
+      position: absolute;
+      top: 15px;
+      left: 330px;
+      z-index: 1100;
+      background-color: #1e1e24;
+      color: #fff;
+      border: 1px solid #3a3a4c;
+      border-radius: 6px;
+      padding: 8px 12px;
+      cursor: pointer;
+      font-weight: bold;
+      box-shadow: 2px 2px 8px rgba(0,0,0,0.4);
+      transition: left 0.3s ease, background-color 0.2s;
+    }
+
+    #toggle-sidebar-btn:hover {
+      background-color: #2a2a35;
+    }
+
+    #app-container.sidebar-closed #toggle-sidebar-btn {
+      left: 10px;
+    }
+
+    /* MAPA */
+    #map {
+      flex: 1;
+      height: 100%;
+      width: 100%;
+    }
+
+    /* ESTILOS DE MARCADORES Y ETIQUETAS */
+    .custom-pilot-marker {
+      display: flex;
+      align-items: center;
+    }
+
+    .pilot-icon {
+      font-size: 24px;
+      filter: drop-shadow(2px 2px 2px rgba(0,0,0,0.5));
+    }
+
+    .pilot-label {
+      background-color: rgba(0, 0, 0, 0.8);
+      color: #ffffff;
+      font-size: 11px;
+      font-weight: bold;
+      padding: 2px 6px;
+      border-radius: 4px;
+      margin-left: 4px;
+      white-space: nowrap;
+      border: 1px solid rgba(255, 255, 255, 0.2);
+    }
   </style>
 </head>
 <body>
 
+<div id="app-container">
+  <!-- BOTÓN COLAPSAR BARRA LATERAL -->
+  <button id="toggle-sidebar-btn" onclick="toggleSidebar()">◀ Ocultar Panel</button>
+
+  <!-- BARRA LATERAL -->
   <div id="sidebar">
-    <h2>🎯 Pilotos en Vivo</h2>
-    <input type="text" id="search" placeholder="Buscar piloto..." onkeyup="filterPilots()" />
-    <div id="pilots-list"></div>
+    <div class="sidebar-header">
+      <h2>Pilotos en Vivo</h2>
+      <input type="text" id="search" class="search-box" placeholder="Buscar piloto..." oninput="filterPilots()">
+      
+      <div class="selection-controls">
+        <label>
+          <input type="checkbox" id="select-all-checkbox" checked onchange="toggleSelectAll(this.checked)">
+          <span>Mostrar todos</span>
+        </label>
+        <button class="btn-toggle-all" onclick="toggleSelectAllAction()">Invertir selección</button>
+      </div>
+    </div>
+
+    <div id="pilots-list">
+      <!-- Las tarjetas de pilotos se generan dinámicamente -->
+    </div>
   </div>
 
+  <!-- MAPA -->
   <div id="map"></div>
-
-  <!-- Leaflet JS -->
-  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+</div>
 
 <script>
   const SUPABASE_URL = 'https://ghpiqdmhlhfyeginefnf.supabase.co';
@@ -69,25 +231,44 @@
   const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
   const map = L.map('map').setView([40.4167, -3.7037], 6);
-  
+
   L.tileLayer('https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png', {
     maxZoom: 17,
     subdomains: 'abc',
-    attribution: 'Map data: © OpenStreetMap contributors, SRTM | Map style: © OpenTopoMap (CC-BY-SA)'
+    attribution: 'Map data: © OpenStreetMap, SRTM | Style: © OpenTopoMap'
   }).addTo(map);
 
   const markers = {};
   const polylines = {};
-  const pilotTracks = {}; // Guarda { [pilot_id]: [ {lat, lng, time}, ... ] }
+  const pilotTracks = {};
   const pilotsData = {};
+  const visiblePilots = {}; // Estado de visibilidad { [pilot_id]: true/false }
 
   const FIVE_MINUTES_MS = 5 * 60 * 1000;
 
+  // TOGGLE BARRA LATERAL
+  function toggleSidebar() {
+    const sidebar = document.getElementById('sidebar');
+    const container = document.getElementById('app-container');
+    const btn = document.getElementById('toggle-sidebar-btn');
+
+    sidebar.classList.toggle('collapsed');
+    container.classList.toggle('sidebar-closed');
+
+    if (sidebar.classList.contains('collapsed')) {
+      btn.innerText = '▶ Mostrar Panel';
+    } else {
+      btn.innerText = '◀ Ocultar Panel';
+    }
+
+    setTimeout(() => { map.invalidateSize(); }, 300); // Recalcular tamaño del mapa
+  }
+
+  // CARGA INICIAL DE POSICIONES
   async function loadInitialLocations() {
-    // Cargar ubicaciones de los últimos 5 minutos al iniciar la web
     const fiveMinutesAgo = new Date(Date.now() - FIVE_MINUTES_MS).toISOString();
     
-    const { data, error } = await supabaseClient
+    const { data } = await supabaseClient
       .from('pilots_locations')
       .select('*')
       .gte('updated_at', fiveMinutesAgo)
@@ -98,60 +279,126 @@
     }
   }
 
+  // PROCESAR Y DIBUJAR PUNTOS EN EL MAPA
   function processNewPoint(point) {
     const { pilot_id, name, latitude, longitude, altitude, speed, updated_at } = point;
     const pointTime = new Date(updated_at).getTime();
 
-    // 1. Guardar o actualizar la información actual del piloto
     pilotsData[pilot_id] = point;
 
-    // 2. Inicializar el array de historial si no existe
+    // Por defecto, si es un piloto nuevo, se muestra visible
+    if (visiblePilots[pilot_id] === undefined) {
+      visiblePilots[pilot_id] = true;
+    }
+
     if (!pilotTracks[pilot_id]) {
       pilotTracks[pilot_id] = [];
     }
-
-    // Añadir el nuevo punto
     pilotTracks[pilot_id].push({ lat: latitude, lng: longitude, time: pointTime });
 
-    // 3. Filtrar puntos para mantener SOLO los de los últimos 5 minutos
     const now = Date.now();
     pilotTracks[pilot_id] = pilotTracks[pilot_id].filter(p => (now - p.time) <= FIVE_MINUTES_MS);
 
-    // 4. Dibujar o actualizar la línea (Track)
     const latLngs = pilotTracks[pilot_id].map(p => [p.lat, p.lng]);
 
-    if (polylines[pilot_id]) {
-      polylines[pilot_id].setLatLngs(latLngs);
-    } else {
+    // Crear/Actualizar línea (Track)
+    if (!polylines[pilot_id]) {
       polylines[pilot_id] = L.polyline(latLngs, {
-        color: '#ff3300', // Color rojo para destacar la trayectoria
+        color: '#ff3300',
         weight: 4,
         opacity: 0.8,
         smoothFactor: 1
-      }).addTo(map);
+      });
+    } else {
+      polylines[pilot_id].setLatLngs(latLngs);
     }
 
-    // 5. Dibujar o actualizar el marcador actual
+    // Crear/Actualizar Marcador
     const displayName = name || pilot_id;
-    const speedFixed = speed ? speed.toFixed(1) : "0.0";
-    const altFixed = altitude ? altitude.toFixed(0) : "0";
+    const currentSpeed = speed || 0;
+    const iconEmoji = currentSpeed >= 10.0 ? '🪂' : '📍';
 
-    if (markers[pilot_id]) {
-      markers[pilot_id].setLatLng([latitude, longitude]);
-    } else {
-      markers[pilot_id] = L.marker([latitude, longitude]).addTo(map);
+    const customIcon = L.divIcon({
+      className: 'custom-pilot-marker',
+      html: `
+        <span class="pilot-icon">${iconEmoji}</span>
+        <span class="pilot-label">${displayName}</span>
+      `,
+      iconSize: [120, 30],
+      iconAnchor: [12, 15]
+    });
+
+    if (!markers[pilot_id]) {
+      markers[pilot_id] = L.marker([latitude, longitude], { icon: customIcon });
       map.setView([latitude, longitude], 14);
+    } else {
+      markers[pilot_id].setLatLng([latitude, longitude]);
+      markers[pilot_id].setIcon(customIcon);
     }
 
     markers[pilot_id].bindPopup(`
       <b style="font-size: 1.1em">${displayName}</b><br>
-      Velocidad: <b>${speedFixed} km/h</b><br>
-      Altitud: <b>${altFixed} m</b>
+      Velocidad: <b>${currentSpeed.toFixed(1)} km/h</b><br>
+      Altitud: <b>${altitude ? altitude.toFixed(0) : 0} m</b>
     `);
 
+    // Sincronizar elementos visibles en el mapa
+    updatePilotVisibilityOnMap(pilot_id);
     renderPilotsList();
   }
 
+  // GESTIÓN DE VISIBILIDAD EN EL MAPA
+  function updatePilotVisibilityOnMap(pilot_id) {
+    const isVisible = visiblePilots[pilot_id];
+
+    if (isVisible) {
+      if (markers[pilot_id] && !map.hasLayer(markers[pilot_id])) {
+        map.addLayer(markers[pilot_id]);
+      }
+      if (polylines[pilot_id] && !map.hasLayer(polylines[pilot_id])) {
+        map.addLayer(polylines[pilot_id]);
+      }
+    } else {
+      if (markers[pilot_id] && map.hasLayer(markers[pilot_id])) {
+        map.removeLayer(markers[pilot_id]);
+      }
+      if (polylines[pilot_id] && map.hasLayer(polylines[pilot_id])) {
+        map.removeLayer(polylines[pilot_id]);
+      }
+    }
+  }
+
+  function togglePilotVisibility(pilot_id, isChecked) {
+    visiblePilots[pilot_id] = isChecked;
+    updatePilotVisibilityOnMap(pilot_id);
+    updateSelectAllCheckboxState();
+  }
+
+  function toggleSelectAll(isChecked) {
+    Object.keys(pilotsData).forEach(pilot_id => {
+      visiblePilots[pilot_id] = isChecked;
+      updatePilotVisibilityOnMap(pilot_id);
+    });
+    renderPilotsList();
+  }
+
+  function toggleSelectAllAction() {
+    Object.keys(pilotsData).forEach(pilot_id => {
+      visiblePilots[pilot_id] = !visiblePilots[pilot_id];
+      updatePilotVisibilityOnMap(pilot_id);
+    });
+    renderPilotsList();
+    updateSelectAllCheckboxState();
+  }
+
+  function updateSelectAllCheckboxState() {
+    const allIds = Object.keys(pilotsData);
+    if (allIds.length === 0) return;
+    const allChecked = allIds.every(id => visiblePilots[id]);
+    document.getElementById('select-all-checkbox').checked = allChecked;
+  }
+
+  // RENDERIZAR LA LISTA LATERAL
   function renderPilotsList() {
     const listContainer = document.getElementById('pilots-list');
     const filterText = document.getElementById('search').value.toLowerCase();
@@ -161,17 +408,18 @@
       const displayName = pilot.name || pilot.pilot_id;
 
       if (displayName.toLowerCase().includes(filterText) || pilot.pilot_id.toLowerCase().includes(filterText)) {
+        const isChecked = visiblePilots[pilot.pilot_id] !== false;
+
         const card = document.createElement('div');
         card.className = 'pilot-card';
-        card.onclick = () => {
-          map.flyTo([pilot.latitude, pilot.longitude], 16);
-          markers[pilot.pilot_id].openPopup();
-        };
 
         card.innerHTML = `
-          <div class="pilot-name">${displayName}</div>
-          <div class="pilot-stats">
-            ⚡ ${pilot.speed ? pilot.speed.toFixed(1) : 0} km/h | 🏔️ ${pilot.altitude ? pilot.altitude.toFixed(0) : 0} m
+          <input type="checkbox" ${isChecked ? 'checked' : ''} onchange="togglePilotVisibility('${pilot.pilot_id}', this.checked)">
+          <div class="pilot-info" onclick="focusPilot('${pilot.pilot_id}')">
+            <div class="pilot-name">${displayName}</div>
+            <div class="pilot-stats">
+              ⚡ ${pilot.speed ? pilot.speed.toFixed(1) : 0} km/h | 🏔️ ${pilot.altitude ? pilot.altitude.toFixed(0) : 0} m
+            </div>
           </div>
         `;
         listContainer.appendChild(card);
@@ -179,30 +427,31 @@
     });
   }
 
+  function focusPilot(pilot_id) {
+    const pilot = pilotsData[pilot_id];
+    if (pilot && markers[pilot_id]) {
+      // Si el piloto estaba oculto, lo volvemos a mostrar automáticamente al hacer clic en su tarjeta
+      if (!visiblePilots[pilot_id]) {
+        togglePilotVisibility(pilot_id, true);
+        renderPilotsList();
+      }
+      map.flyTo([pilot.latitude, pilot.longitude], 16);
+      markers[pilot_id].openPopup();
+    }
+  }
+
   function filterPilots() {
     renderPilotsList();
   }
 
-  // Limpieza periódica cada 30 segundos para borrar líneas antiguas de pilotos detenidos
-  setInterval(() => {
-    const now = Date.now();
-    Object.keys(pilotTracks).forEach(pilot_id => {
-      pilotTracks[pilot_id] = pilotTracks[pilot_id].filter(p => (now - p.time) <= FIVE_MINUTES_MS);
-      if (polylines[pilot_id]) {
-        polylines[pilot_id].setLatLngs(pilotTracks[pilot_id].map(p => [p.lat, p.lng]));
-      }
-    });
-  }, 30000);
+  // SUSCRIPCIÓN EN TIEMPO REAL
   supabaseClient
     .channel('schema-db-changes')
-    .on(
-      'postgres_changes',
-      { event: 'INSERT', schema: 'public', table: 'pilots_locations' },
-      (payload) => {
-        processNewPoint(payload.new);
-      }
-    )
+    .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'pilots_locations' }, (payload) => {
+      processNewPoint(payload.new);
+    })
     .subscribe();
+
   loadInitialLocations();
 </script>
 
