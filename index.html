@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Seguimiento en Vivo - Pilotos</title>
+  
+  <!-- Leaflet CSS (Mapa) -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <!-- Supabase JS -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: Arial, sans-serif; display: flex; height: 100vh; background: #121212; color: #fff; }
+    
+    #sidebar {
+      width: 320px;
+      background: #1e1e1e;
+      padding: 15px;
+      display: flex;
+      flex-direction: column;
+      gap: 15px;
+      box-shadow: 2px 0 5px rgba(0,0,0,0.5);
+      z-index: 1000;
+    }
+
+    #search {
+      width: 100%;
+      padding: 10px;
+      border-radius: 5px;
+      border: 1px solid #333;
+      background: #2a2a2a;
+      color: #fff;
+    }
+
+    .pilot-card {
+      background: #2a2a2a;
+      padding: 12px;
+      border-radius: 6px;
+      cursor: pointer;
+      border-left: 4px solid #00e676;
+      transition: background 0.2s;
+    }
+
+    .pilot-card:hover { background: #333; }
+    .pilot-name { font-weight: bold; font-size: 1.1em; }
+    .pilot-stats { font-size: 0.85em; color: #bbb; margin-top: 5px; }
+
+    #map { flex: 1; height: 100%; }
+  </style>
+</head>
+<body>
+
+  <div id="sidebar">
+    <h2>🎯 Pilotos en Vivo</h2>
+    <input type="text" id="search" placeholder="Buscar piloto..." onkeyup="filterPilots()" />
+    <div id="pilots-list"></div>
+  </div>
+
+  <div id="map"></div>
+
+  <!-- Leaflet JS -->
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+  <script>
+    // CREDENCIALES DE SUPABASE
+    const SUPABASE_URL = 'https://ghpiqdmhlhfyeginefnf.supabase.co';
+    const SUPABASE_KEY = 'sb_publishable_0CQFFsTpM2rw7_mMEo0IUw_1NTVEnEE';
+    const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+    // Inicializar Mapa centrado en una posición inicial
+    const map = L.map('map').setView([40.4167, -3.7037], 6);
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      maxZoom: 19,
+      attribution: '© OpenStreetMap'
+    }).addTo(map);
+
+    const markers = {};
+    const pilotsData = {};
+
+    // Cargar posiciones iniciales
+    async function loadInitialLocations() {
+      const { data, error } = await supabaseClient
+        .from('pilots_locations')
+        .select('*');
+
+      if (data) {
+        data.forEach(updatePilot);
+      }
+    }
+
+    // Actualizar o crear marcador y tarjeta en lista
+    function updatePilot(pilot) {
+      const { pilot_id, latitude, longitude, altitude, speed, updated_at } = pilot;
+      pilotsData[pilot_id] = pilot;
+
+      const speedFixed = speed ? speed.toFixed(1) : "0.0";
+      const altFixed = altitude ? altitude.toFixed(0) : "0";
+
+      // 1. Actualizar/Crear Marcador en el mapa
+      if (markers[pilot_id]) {
+        markers[pilot_id].setLatLng([latitude, longitude]);
+      } else {
+        markers[pilot_id] = L.marker([latitude, longitude]).addTo(map);
+        map.setView([latitude, longitude], 14); // Enfocar al primer piloto
+      }
+
+      markers[pilot_id].bindPopup(`
+        <b>${pilot_id}</b><br>
+        Velocidad: <b>${speedFixed} km/h</b><br>
+        Altitud: <b>${altFixed} m</b>
+      `);
+
+      // 2. Renderizar lista en Sidebar
+      renderPilotsList();
+    }
+
+    function renderPilotsList() {
+      const listContainer = document.getElementById('pilots-list');
+      const filterText = document.getElementById('search').value.toLowerCase();
+      listContainer.innerHTML = '';
+
+      Object.values(pilotsData).forEach(pilot => {
+        if (pilot.pilot_id.toLowerCase().includes(filterText)) {
+          const card = document.createElement('div');
+          card.className = 'pilot-card';
+          card.onclick = () => {
+            map.flyTo([pilot.latitude, pilot.longitude], 16);
+            markers[pilot.pilot_id].openPopup();
+          };
+
+          card.innerHTML = `
+            <div class="pilot-name">${pilot.pilot_id}</div>
+            <div class="pilot-stats">
+              ⚡ ${pilot.speed ? pilot.speed.toFixed(1) : 0} km/h | 🏔️ ${pilot.altitude ? pilot.altitude.toFixed(0) : 0} m
+            </div>
+          `;
+          listContainer.appendChild(card);
+        }
+      });
+    }
+
+    function filterPilots() {
+      renderPilotsList();
+    }
+
+    // SUSCRIPCIÓN EN TIEMPO REAL CON SUPABASE REALTIME
+    supabaseClient
+      .channel('schema-db-changes')
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'pilots_locations' },
+        (payload) => {
+          updatePilot(payload.new);
+        }
+      )
+      .subscribe();
+
+    loadInitialLocations();
+  </script>
+</body>
+</html>
