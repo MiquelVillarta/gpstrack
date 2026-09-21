@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Seguimiento en Vivo - Parapente</title>
+  <title>Seguiment Lliga Catalana - Parapent</title>
   
   <!-- Leaflet CSS -->
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
@@ -218,13 +218,13 @@
 
 <div id="app-container">
   <!-- BOTÓN FLOTANTE SÓLO VISIBLE CUANDO EL PANEL ESTÁ OCULTO -->
-  <button id="show-sidebar-btn" onclick="toggleSidebar()">▶ Mostrar Panel</button>
+  <button id="show-sidebar-btn" onclick="toggleSidebar()">▶</button>
 
   <!-- BARRA LATERAL -->
   <div id="sidebar">
     <div class="sidebar-header">
       <div class="sidebar-header-top">
-        <h2>Pilotos en Vivo</h2>
+        <h2>Pilots Actius</h2>
         <button class="btn-hide-panel" onclick="toggleSidebar()">◀ Ocultar</button>
       </div>
       
@@ -233,9 +233,9 @@
       <div class="selection-controls">
         <label>
           <input type="checkbox" id="select-all-checkbox" checked onchange="toggleSelectAll(this.checked)">
-          <span>Mostrar todos</span>
+          <span>Mostrar tots</span>
         </label>
-        <button class="btn-toggle-all" onclick="toggleSelectAllAction()">Invertir selección</button>
+        <button class="btn-toggle-all" onclick="toggleSelectAllAction()">Invertir selecció</button>
       </div>
     </div>
 
