@@ -289,8 +289,12 @@
   const map = L.map('map', {
     center: [41.8204, 1.8326],
     zoom: 9,
-    layers: [openTopoLayer]
+    layers: [openTopoLayer],
+    zoomControl: false // lo desactivamos aquí para recolocarlo abajo, a la derecha
   });
+
+  // CONTROL DE ZOOM (Esquina superior derecha, debajo del selector de capas)
+  L.control.zoom({ position: 'topright' }).addTo(map);
 
   // CONTROL SELECTOR DE CAPAS (Esquina superior derecha)
   const baseMaps = {
@@ -300,6 +304,7 @@
   };
 
   L.control.layers(baseMaps, null, { position: 'topright' }).addTo(map);
+
 
   const markers = {};
   const polylines = {};
