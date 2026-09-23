@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Seguiment Lliga Catalana - Parapent</title>
-  
+
   <!-- Leaflet CSS -->
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
   <!-- Supabase JS -->
@@ -227,9 +227,9 @@
         <h2>Pilots Actius</h2>
         <button class="btn-hide-panel" onclick="toggleSidebar()">◀ Ocultar</button>
       </div>
-      
+
       <input type="text" id="search" class="search-box" placeholder="Buscar piloto..." oninput="filterPilots()">
-      
+
       <div class="selection-controls">
         <label>
           <input type="checkbox" id="select-all-checkbox" checked onchange="toggleSelectAll(this.checked)">
@@ -315,7 +315,7 @@
   // CARGA INICIAL DE POSICIONES
   async function loadInitialLocations() {
     const fiveMinutesAgo = new Date(Date.now() - FIVE_MINUTES_MS).toISOString();
-    
+
     const { data } = await supabaseClient
       .from('pilots_locations')
       .select('*')
@@ -329,7 +329,7 @@
 
   // PROCESAR Y DIBUJAR PUNTOS EN EL MAPA
   function processNewPoint(point) {
-    const { pilot_id, name, latitude, longitude, altitude, speed, updated_at } = point;
+    const { pilot_id, latitude, longitude, altitude, speed, updated_at } = point;
     const pointTime = new Date(updated_at).getTime();
 
     pilotsData[pilot_id] = point;
@@ -361,7 +361,7 @@
     }
 
     // Crear/Actualizar Marcador
-    const displayName = name || pilot_id;
+    const displayName = pilot_id;
     const currentSpeed = speed || 0;
     const iconEmoji = currentSpeed >= 10.0 ? '🪂' : '📍';
 
@@ -451,9 +451,9 @@
     listContainer.innerHTML = '';
 
     Object.values(pilotsData).forEach(pilot => {
-      const displayName = pilot.name || pilot.pilot_id;
+      const displayName = pilot.pilot_id;
 
-      if (displayName.toLowerCase().includes(filterText) || pilot.pilot_id.toLowerCase().includes(filterText)) {
+      if (displayName.toLowerCase().includes(filterText)) {
         const isChecked = visiblePilots[pilot.pilot_id] !== false;
 
         const card = document.createElement('div');
@@ -490,9 +490,14 @@
   }
 
   // SUSCRIPCIÓN EN TIEMPO REAL
+  // Escuchamos tanto INSERT (primera posición de cada piloto) como
+  // UPDATE (posiciones siguientes, ya que la app hace upsert sobre pilot_id).
   supabaseClient
     .channel('schema-db-changes')
     .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'pilots_locations' }, (payload) => {
+      processNewPoint(payload.new);
+    })
+    .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'pilots_locations' }, (payload) => {
       processNewPoint(payload.new);
     })
     .subscribe();
