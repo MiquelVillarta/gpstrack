@@ -232,11 +232,11 @@
 <body>
 
 <div id="app-container">
-  <!-- BOTÓN FLOTANTE SÓLO VISIBLE CUANDO EL PANEL ESTÁ OCULTO -->
-  <button id="show-sidebar-btn" onclick="toggleSidebar()">▶</button>
+  <!-- BOTÓN FLOTANTE VISIBLE DE INICIO -->
+  <button id="show-sidebar-btn" style="display: block;" onclick="toggleSidebar()">▶</button>
 
-  <!-- BARRA LATERAL -->
-  <div id="sidebar">
+  <!-- BARRA LATERAL (COLAPSADA DE INICIO) -->
+  <div id="sidebar" class="collapsed">
     <div class="sidebar-header">
       <div class="sidebar-header-top">
         <h2>Pilots Actius</h2>
@@ -524,6 +524,11 @@
     .subscribe();
 
   loadInitialLocations();
+
+  // Asegurar recálculo de tamaño de mapa tras la carga inicial colapsada
+  window.addEventListener('load', () => {
+    map.invalidateSize();
+  });
 </script>
 
 </body>
