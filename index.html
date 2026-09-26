@@ -201,21 +201,6 @@
       filter: drop-shadow(2px 2px 2px rgba(0,0,0,0.5));
     }
 
-    .pilot-avatar {
-      width: 34px;
-      height: 34px;
-      border-radius: 50%;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      color: #ffffff;
-      font-weight: bold;
-      font-size: 16px;
-      border: 2px solid #ffffff;
-      box-shadow: 2px 2px 5px rgba(0,0,0,0.5);
-      flex-shrink: 0;
-    }
-
     .pilot-label {
       background-color: rgba(0, 0, 0, 0.8);
       color: #ffffff;
@@ -232,11 +217,11 @@
 <body>
 
 <div id="app-container">
-  <!-- BOTÓN FLOTANTE VISIBLE DE INICIO -->
-  <button id="show-sidebar-btn" style="display: block;" onclick="toggleSidebar()">▶</button>
+  <!-- BOTÓN FLOTANTE SÓLO VISIBLE CUANDO EL PANEL ESTÁ OCULTO -->
+  <button id="show-sidebar-btn" onclick="toggleSidebar()">▶</button>
 
-  <!-- BARRA LATERAL (COLAPSADA DE INICIO) -->
-  <div id="sidebar" class="collapsed">
+  <!-- BARRA LATERAL -->
+  <div id="sidebar">
     <div class="sidebar-header">
       <div class="sidebar-header-top">
         <h2>Pilots Actius</h2>
@@ -289,12 +274,8 @@
   const map = L.map('map', {
     center: [41.8204, 1.8326],
     zoom: 9,
-    layers: [openTopoLayer],
-    zoomControl: false // lo desactivamos aquí para recolocarlo abajo, a la derecha
+    layers: [openTopoLayer]
   });
-
-  // CONTROL DE ZOOM (Esquina superior derecha, debajo del selector de capas)
-  L.control.zoom({ position: 'topright' }).addTo(map);
 
   // CONTROL SELECTOR DE CAPAS (Esquina superior derecha)
   const baseMaps = {
@@ -304,7 +285,6 @@
   };
 
   L.control.layers(baseMaps, null, { position: 'topright' }).addTo(map);
-
 
   const markers = {};
   const polylines = {};
@@ -383,17 +363,16 @@
     // Crear/Actualizar Marcador
     const displayName = pilot_id;
     const currentSpeed = speed || 0;
-    const inicial = pilot_id.charAt(0).toUpperCase();
-    const colorAvatar = currentSpeed >= 10.0 ? '#2e7d32' : '#555555';
+    const iconEmoji = currentSpeed >= 10.0 ? '🪂' : '📍';
 
     const customIcon = L.divIcon({
       className: 'custom-pilot-marker',
       html: `
-        <div class="pilot-avatar" style="background-color:${colorAvatar};">${inicial}</div>
+        <span class="pilot-icon">${iconEmoji}</span>
         <span class="pilot-label">${displayName}</span>
       `,
-      iconSize: [140, 34],
-      iconAnchor: [17, 17]
+      iconSize: [120, 30],
+      iconAnchor: [12, 15]
     });
 
     if (!markers[pilot_id]) {
@@ -524,11 +503,6 @@
     .subscribe();
 
   loadInitialLocations();
-
-  // Asegurar recálculo de tamaño de mapa tras la carga inicial colapsada
-  window.addEventListener('load', () => {
-    map.invalidateSize();
-  });
 </script>
 
 </body>
