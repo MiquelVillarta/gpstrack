@@ -32,7 +32,7 @@
       position: relative;
     }
 
-    /* BARRA LATERAL */
+    /* BARRA LATERAL (OCULTA POR DEFECTO) */
     #sidebar {
       width: 320px;
       height: 100%;
@@ -46,7 +46,7 @@
     }
 
     #sidebar.collapsed {
-      margin-left: -320px; /* Esconde la barra lateral */
+      margin-left: -320px; /* Panel totalmente oculto */
     }
 
     .sidebar-header {
@@ -68,7 +68,6 @@
       margin: 0;
     }
 
-    /* BOTÓN DENTRO DEL SIDEBAR */
     .btn-hide-panel {
       background-color: #2a2a35;
       color: #fff;
@@ -84,9 +83,9 @@
       background-color: #3a3a4c;
     }
 
-    /* BOTÓN FLOTANTE PARA REABRIR CUANDO ESTÁ OCULTO */
+    /* BOTÓN FLOTANTE PARA DESPLEGAR PANEL (VISIBLE AL INICIAR) */
     #show-sidebar-btn {
-      display: none;
+      display: block; /* Visible al cargar porque el panel inicia oculto */
       position: absolute;
       top: 10px;
       left: 10px;
@@ -117,7 +116,6 @@
       outline: none;
     }
 
-    /* CONTROLES DE SELECCIÓN GENERAL */
     .selection-controls {
       display: flex;
       align-items: center;
@@ -143,7 +141,6 @@
       text-decoration: underline;
     }
 
-    /* LISTA DE PILOTOS */
     #pilots-list {
       flex: 1;
       overflow-y: auto;
@@ -183,22 +180,38 @@
       margin-top: 2px;
     }
 
-    /* MAPA */
     #map {
       flex: 1;
       height: 100%;
       width: 100%;
     }
 
-    /* ESTILOS DE MARCADORES Y ETIQUETAS */
+    /* ESTILOS DE MARCADORES */
     .custom-pilot-marker {
       display: flex;
       align-items: center;
+      justify-content: flex-start;
     }
 
-    .pilot-icon {
-      font-size: 24px;
+    .pilot-circle-icon {
+      width: 30px;
+      height: 30px;
+      border-radius: 50%;
+      color: #ffffff;
+      font-weight: bold;
+      font-size: 14px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border: 2px solid #ffffff;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.5);
+      flex-shrink: 0;
+    }
+
+    .vehicle-emoji-icon {
+      font-size: 26px;
       filter: drop-shadow(2px 2px 2px rgba(0,0,0,0.5));
+      line-height: 1;
     }
 
     .pilot-label {
@@ -208,7 +221,7 @@
       font-weight: bold;
       padding: 2px 6px;
       border-radius: 4px;
-      margin-left: 4px;
+      margin-left: 6px;
       white-space: nowrap;
       border: 1px solid rgba(255, 255, 255, 0.2);
     }
@@ -217,11 +230,11 @@
 <body>
 
 <div id="app-container">
-  <!-- BOTÓN FLOTANTE SÓLO VISIBLE CUANDO EL PANEL ESTÁ OCULTO -->
-  <button id="show-sidebar-btn" onclick="toggleSidebar()">▶</button>
+  <!-- BOTÓN FLOTANTE PARA MOSTRAR EL PANEL -->
+  <button id="show-sidebar-btn" onclick="toggleSidebar()">▶ Mostrar</button>
 
-  <!-- BARRA LATERAL -->
-  <div id="sidebar">
+  <!-- BARRA LATERAL (INICIA CON LA CLASE COLLAPSED) -->
+  <div id="sidebar" class="collapsed">
     <div class="sidebar-header">
       <div class="sidebar-header-top">
         <h2>Pilots Actius</h2>
@@ -239,9 +252,7 @@
       </div>
     </div>
 
-    <div id="pilots-list">
-      <!-- Las tarjetas de pilotos se generan dinámicamente -->
-    </div>
+    <div id="pilots-list"></div>
   </div>
 
   <!-- MAPA -->
@@ -253,7 +264,6 @@
   const SUPABASE_KEY = 'sb_publishable_0CQFFsTpM2rw7_mMEo0IUw_1NTVEnEE';
   const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
-  // DECLARACIÓN DE CAPAS DE MAPA
   const osmLayer = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
     maxZoom: 19,
     attribution: '© OpenStreetMap contributors'
@@ -270,14 +280,17 @@
     attribution: 'Tiles &copy; Esri &mdash; Source: Esri, i-cubed, USDA, USGS, AEX, GeoEye, Getmapping, Aerogrid, IGN, IGP, UPR-EGP, and the GIS User Community'
   });
 
-  // INICIALIZACIÓN DEL MAPA (por defecto con OpenTopoMap)
+  // MAPA SIN CONTROL DE ZOOM POR DEFECTO
   const map = L.map('map', {
     center: [41.8204, 1.8326],
     zoom: 9,
+    zoomControl: false, 
     layers: [openTopoLayer]
   });
 
-  // CONTROL SELECTOR DE CAPAS (Esquina superior derecha)
+  // ZOOM Y SELECTOR COLOCADOS EN LA DERECHA
+  L.control.zoom({ position: 'topright' }).addTo(map);
+
   const baseMaps = {
     "OpenTopoMap": openTopoLayer,
     "OpenStreetMap": osmLayer,
@@ -290,18 +303,15 @@
   const polylines = {};
   const pilotTracks = {};
   const pilotsData = {};
-  const visiblePilots = {}; // Estado de visibilidad { [pilot_id]: true/false }
+  const visiblePilots = {};
 
   const FIVE_MINUTES_MS = 5 * 60 * 1000;
 
-  // TOGGLE BARRA LATERAL
   function toggleSidebar() {
     const sidebar = document.getElementById('sidebar');
-    const container = document.getElementById('app-container');
     const showBtn = document.getElementById('show-sidebar-btn');
 
     sidebar.classList.toggle('collapsed');
-    container.classList.toggle('sidebar-closed');
 
     if (sidebar.classList.contains('collapsed')) {
       showBtn.style.display = 'block';
@@ -312,7 +322,6 @@
     setTimeout(() => { map.invalidateSize(); }, 300);
   }
 
-  // CARGA INICIAL DE POSICIONES
   async function loadInitialLocations() {
     const fiveMinutesAgo = new Date(Date.now() - FIVE_MINUTES_MS).toISOString();
 
@@ -327,12 +336,45 @@
     }
   }
 
-  // PROCESAR Y DIBUJAR PUNTOS EN EL MAPA
+  // CREADOR DE ICONO SEGÚN NOMBRE Y VELOCIDAD
+  function createPilotIconHtml(displayName, currentSpeed) {
+    const cleanName = (displayName || 'P').toString().trim();
+    const upperName = cleanName.toUpperCase();
+
+    // 1. Detección de Vehículos especiales
+    if (upperName.startsWith('BUS')) {
+      return `
+        <span class="vehicle-emoji-icon">🚌</span>
+        <span class="pilot-label">${cleanName}</span>
+      `;
+    }
+    
+    if (upperName.startsWith('FURGO')) {
+      return `
+        <span class="vehicle-emoji-icon">🚐</span>
+        <span class="pilot-label">${cleanName}</span>
+      `;
+    }
+
+    // 2. Icono circular con Inicial (Gris < 10 km/h, Verde >= 10 km/h)
+    const initial = cleanName.charAt(0).toUpperCase();
+    const bgColor = currentSpeed >= 10.0 ? '#28a745' : '#6c757d';
+
+    return `
+      <div class="pilot-circle-icon" style="background-color: ${bgColor};">
+        ${initial}
+      </div>
+      <span class="pilot-label">${cleanName}</span>
+    `;
+  }
+
   function processNewPoint(point) {
-    const { pilot_id, latitude, longitude, altitude, speed, updated_at } = point;
+    const { pilot_id, name, latitude, longitude, altitude, speed, updated_at } = point;
     const pointTime = new Date(updated_at).getTime();
 
-    pilotsData[pilot_id] = point;
+    const displayName = (name && name.toString().trim() !== '') ? name.toString().trim() : pilot_id;
+
+    pilotsData[pilot_id] = { ...point, displayName };
 
     if (visiblePilots[pilot_id] === undefined) {
       visiblePilots[pilot_id] = true;
@@ -348,7 +390,7 @@
 
     const latLngs = pilotTracks[pilot_id].map(p => [p.lat, p.lng]);
 
-    // Crear/Actualizar línea (Track)
+    // Crear/Actualizar línea
     if (!polylines[pilot_id]) {
       polylines[pilot_id] = L.polyline(latLngs, {
         color: '#ff3300',
@@ -361,23 +403,18 @@
     }
 
     // Crear/Actualizar Marcador
-    const displayName = pilot_id;
     const currentSpeed = speed || 0;
-    const iconEmoji = currentSpeed >= 10.0 ? '🪂' : '📍';
+    const iconHtml = createPilotIconHtml(displayName, currentSpeed);
 
     const customIcon = L.divIcon({
       className: 'custom-pilot-marker',
-      html: `
-        <span class="pilot-icon">${iconEmoji}</span>
-        <span class="pilot-label">${displayName}</span>
-      `,
-      iconSize: [120, 30],
-      iconAnchor: [12, 15]
+      html: iconHtml,
+      iconSize: [160, 32],
+      iconAnchor: [15, 16]
     });
 
     if (!markers[pilot_id]) {
       markers[pilot_id] = L.marker([latitude, longitude], { icon: customIcon });
-      map.setView([latitude, longitude], 14);
     } else {
       markers[pilot_id].setLatLng([latitude, longitude]);
       markers[pilot_id].setIcon(customIcon);
@@ -393,7 +430,6 @@
     renderPilotsList();
   }
 
-  // GESTIÓN DE VISIBILIDAD EN EL MAPA
   function updatePilotVisibilityOnMap(pilot_id) {
     const isVisible = visiblePilots[pilot_id];
 
@@ -444,14 +480,13 @@
     document.getElementById('select-all-checkbox').checked = allChecked;
   }
 
-  // RENDERIZAR LA LISTA LATERAL
   function renderPilotsList() {
     const listContainer = document.getElementById('pilots-list');
     const filterText = document.getElementById('search').value.toLowerCase();
     listContainer.innerHTML = '';
 
     Object.values(pilotsData).forEach(pilot => {
-      const displayName = pilot.pilot_id;
+      const displayName = pilot.displayName;
 
       if (displayName.toLowerCase().includes(filterText)) {
         const isChecked = visiblePilots[pilot.pilot_id] !== false;
@@ -489,9 +524,6 @@
     renderPilotsList();
   }
 
-  // SUSCRIPCIÓN EN TIEMPO REAL
-  // Escuchamos tanto INSERT (primera posición de cada piloto) como
-  // UPDATE (posiciones siguientes, ya que la app hace upsert sobre pilot_id).
   supabaseClient
     .channel('schema-db-changes')
     .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'pilots_locations' }, (payload) => {
