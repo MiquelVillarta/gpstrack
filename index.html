@@ -46,7 +46,7 @@
     }
 
     #sidebar.collapsed {
-      margin-left: -320px; /* Panel totalmente oculto */
+      margin-left: -320px;
     }
 
     .sidebar-header {
@@ -83,9 +83,9 @@
       background-color: #3a3a4c;
     }
 
-    /* BOTÓN FLOTANTE PARA DESPLEGAR PANEL (VISIBLE AL INICIAR) */
+    /* BOTÓN FLOTANTE PARA MOSTRAR PANEL */
     #show-sidebar-btn {
-      display: block; /* Visible al cargar porque el panel inicia oculto */
+      display: block;
       position: absolute;
       top: 10px;
       left: 10px;
@@ -230,10 +230,10 @@
 <body>
 
 <div id="app-container">
-  <!-- BOTÓN FLOTANTE PARA MOSTRAR EL PANEL -->
+  <!-- BOTÓN FLOTANTE PARA MOSTRAR PANEL -->
   <button id="show-sidebar-btn" onclick="toggleSidebar()">▶ Mostrar</button>
 
-  <!-- BARRA LATERAL (INICIA CON LA CLASE COLLAPSED) -->
+  <!-- BARRA LATERAL (OCULTA POR DEFECTO) -->
   <div id="sidebar" class="collapsed">
     <div class="sidebar-header">
       <div class="sidebar-header-top">
@@ -280,15 +280,15 @@
     attribution: 'Tiles &copy; Esri &mdash; Source: Esri, i-cubed, USDA, USGS, AEX, GeoEye, Getmapping, Aerogrid, IGN, IGP, UPR-EGP, and the GIS User Community'
   });
 
-  // MAPA SIN CONTROL DE ZOOM POR DEFECTO
+  // MAPA SIN CONTROL DE ZOOM POR DEFECTO EN LA IZQUIERDA
   const map = L.map('map', {
     center: [41.8204, 1.8326],
     zoom: 9,
-    zoomControl: false, 
+    zoomControl: false,
     layers: [openTopoLayer]
   });
 
-  // ZOOM Y SELECTOR COLOCADOS EN LA DERECHA
+  // ZOOMS Y CAPAS A LA DERECHA
   L.control.zoom({ position: 'topright' }).addTo(map);
 
   const baseMaps = {
@@ -336,12 +336,12 @@
     }
   }
 
-  // CREADOR DE ICONO SEGÚN NOMBRE Y VELOCIDAD
+  // CREADOR DE ICONO SEGÚN PILOT_ID Y VELOCIDAD
   function createPilotIconHtml(displayName, currentSpeed) {
     const cleanName = (displayName || 'P').toString().trim();
     const upperName = cleanName.toUpperCase();
 
-    // 1. Detección de Vehículos especiales
+    // 1. Vehículos especiales
     if (upperName.startsWith('BUS')) {
       return `
         <span class="vehicle-emoji-icon">🚌</span>
@@ -356,7 +356,7 @@
       `;
     }
 
-    // 2. Icono circular con Inicial (Gris < 10 km/h, Verde >= 10 km/h)
+    // 2. Chapa circular con inicial (Gris < 10 km/h, Verde >= 10 km/h)
     const initial = cleanName.charAt(0).toUpperCase();
     const bgColor = currentSpeed >= 10.0 ? '#28a745' : '#6c757d';
 
@@ -369,10 +369,11 @@
   }
 
   function processNewPoint(point) {
-    const { pilot_id, name, latitude, longitude, altitude, speed, updated_at } = point;
+    const { pilot_id, latitude, longitude, altitude, speed, updated_at } = point;
     const pointTime = new Date(updated_at).getTime();
 
-    const displayName = (name && name.toString().trim() !== '') ? name.toString().trim() : pilot_id;
+    // Usar directamente pilot_id de Supabase
+    const displayName = pilot_id;
 
     pilotsData[pilot_id] = { ...point, displayName };
 
@@ -390,7 +391,7 @@
 
     const latLngs = pilotTracks[pilot_id].map(p => [p.lat, p.lng]);
 
-    // Crear/Actualizar línea
+    // Crear/Actualizar línea (Track)
     if (!polylines[pilot_id]) {
       polylines[pilot_id] = L.polyline(latLngs, {
         color: '#ff3300',
@@ -524,6 +525,7 @@
     renderPilotsList();
   }
 
+  // SUSCRIPCIÓN EN TIEMPO REAL
   supabaseClient
     .channel('schema-db-changes')
     .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'pilots_locations' }, (payload) => {
