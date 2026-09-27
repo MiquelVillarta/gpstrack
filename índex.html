@@ -1,0 +1,541 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Seguiment Lliga Catalana - Parapent</title>
+
+  <!-- Leaflet CSS -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <!-- Supabase JS -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <!-- Leaflet JS -->
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+    body, html {
+      height: 100%;
+      width: 100%;
+      font-family: Arial, sans-serif;
+      overflow: hidden;
+    }
+
+    #app-container {
+      display: flex;
+      width: 100vw;
+      height: 100vh;
+      position: relative;
+    }
+
+    /* BARRA LATERAL (OCULTA POR DEFECTO) */
+    #sidebar {
+      width: 320px;
+      height: 100%;
+      background-color: #1e1e24;
+      color: #ffffff;
+      display: flex;
+      flex-direction: column;
+      z-index: 1000;
+      transition: margin-left 0.3s ease;
+      box-shadow: 2px 0 10px rgba(0,0,0,0.5);
+    }
+
+    #sidebar.collapsed {
+      margin-left: -320px; /* Panel totalmente oculto */
+    }
+
+    .sidebar-header {
+      padding: 15px;
+      background-color: #121216;
+      border-bottom: 1px solid #2a2a35;
+    }
+
+    .sidebar-header-top {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 12px;
+    }
+
+    .sidebar-header h2 {
+      font-size: 1.1rem;
+      color: #00d2ff;
+      margin: 0;
+    }
+
+    .btn-hide-panel {
+      background-color: #2a2a35;
+      color: #fff;
+      border: 1px solid #3a3a4c;
+      border-radius: 4px;
+      padding: 4px 8px;
+      cursor: pointer;
+      font-size: 12px;
+      transition: background-color 0.2s;
+    }
+
+    .btn-hide-panel:hover {
+      background-color: #3a3a4c;
+    }
+
+    /* BOTÓN FLOTANTE PARA DESPLEGAR PANEL (VISIBLE AL INICIAR) */
+    #show-sidebar-btn {
+      display: block; /* Visible al cargar porque el panel inicia oculto */
+      position: absolute;
+      top: 10px;
+      left: 10px;
+      z-index: 1100;
+      background-color: #1e1e24;
+      color: #fff;
+      border: 1px solid #3a3a4c;
+      border-radius: 6px;
+      padding: 8px 12px;
+      cursor: pointer;
+      font-weight: bold;
+      box-shadow: 2px 2px 8px rgba(0,0,0,0.4);
+    }
+
+    #show-sidebar-btn:hover {
+      background-color: #2a2a35;
+    }
+
+    .search-box {
+      width: 100%;
+      padding: 8px 12px;
+      border-radius: 6px;
+      border: 1px solid #3a3a4c;
+      background-color: #2a2a35;
+      color: #fff;
+      font-size: 14px;
+      margin-bottom: 10px;
+      outline: none;
+    }
+
+    .selection-controls {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 5px 0;
+      font-size: 13px;
+      color: #bbb;
+    }
+
+    .selection-controls label {
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .btn-toggle-all {
+      background: none;
+      border: none;
+      color: #00d2ff;
+      cursor: pointer;
+      font-size: 12px;
+      text-decoration: underline;
+    }
+
+    #pilots-list {
+      flex: 1;
+      overflow-y: auto;
+      padding: 10px;
+    }
+
+    .pilot-card {
+      background-color: #2a2a35;
+      border-radius: 8px;
+      padding: 10px;
+      margin-bottom: 8px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      border: 1px solid #3a3a4c;
+      transition: background-color 0.2s;
+    }
+
+    .pilot-card:hover {
+      background-color: #343444;
+    }
+
+    .pilot-info {
+      flex: 1;
+      cursor: pointer;
+    }
+
+    .pilot-name {
+      font-weight: bold;
+      font-size: 14px;
+      color: #fff;
+    }
+
+    .pilot-stats {
+      font-size: 12px;
+      color: #aaa;
+      margin-top: 2px;
+    }
+
+    #map {
+      flex: 1;
+      height: 100%;
+      width: 100%;
+    }
+
+    /* ESTILOS DE MARCADORES */
+    .custom-pilot-marker {
+      display: flex;
+      align-items: center;
+      justify-content: flex-start;
+    }
+
+    .pilot-circle-icon {
+      width: 30px;
+      height: 30px;
+      border-radius: 50%;
+      color: #ffffff;
+      font-weight: bold;
+      font-size: 14px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border: 2px solid #ffffff;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.5);
+      flex-shrink: 0;
+    }
+
+    .vehicle-emoji-icon {
+      font-size: 26px;
+      filter: drop-shadow(2px 2px 2px rgba(0,0,0,0.5));
+      line-height: 1;
+    }
+
+    .pilot-label {
+      background-color: rgba(0, 0, 0, 0.8);
+      color: #ffffff;
+      font-size: 11px;
+      font-weight: bold;
+      padding: 2px 6px;
+      border-radius: 4px;
+      margin-left: 6px;
+      white-space: nowrap;
+      border: 1px solid rgba(255, 255, 255, 0.2);
+    }
+  </style>
+</head>
+<body>
+
+<div id="app-container">
+  <!-- BOTÓN FLOTANTE PARA MOSTRAR EL PANEL -->
+  <button id="show-sidebar-btn" onclick="toggleSidebar()">▶ Mostrar</button>
+
+  <!-- BARRA LATERAL (INICIA CON LA CLASE COLLAPSED) -->
+  <div id="sidebar" class="collapsed">
+    <div class="sidebar-header">
+      <div class="sidebar-header-top">
+        <h2>Pilots Actius</h2>
+        <button class="btn-hide-panel" onclick="toggleSidebar()">◀ Ocultar</button>
+      </div>
+
+      <input type="text" id="search" class="search-box" placeholder="Buscar piloto..." oninput="filterPilots()">
+
+      <div class="selection-controls">
+        <label>
+          <input type="checkbox" id="select-all-checkbox" checked onchange="toggleSelectAll(this.checked)">
+          <span>Mostrar tots</span>
+        </label>
+        <button class="btn-toggle-all" onclick="toggleSelectAllAction()">Invertir selecció</button>
+      </div>
+    </div>
+
+    <div id="pilots-list"></div>
+  </div>
+
+  <!-- MAPA -->
+  <div id="map"></div>
+</div>
+
+<script>
+  const SUPABASE_URL = 'https://ghpiqdmhlhfyeginefnf.supabase.co';
+  const SUPABASE_KEY = 'sb_publishable_0CQFFsTpM2rw7_mMEo0IUw_1NTVEnEE';
+  const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+  const osmLayer = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    maxZoom: 19,
+    attribution: '© OpenStreetMap contributors'
+  });
+
+  const openTopoLayer = L.tileLayer('https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png', {
+    maxZoom: 17,
+    subdomains: 'abc',
+    attribution: 'Map data: © OpenStreetMap, SRTM | Style: © OpenTopoMap'
+  });
+
+  const esriSatelliteLayer = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
+    maxZoom: 18,
+    attribution: 'Tiles &copy; Esri &mdash; Source: Esri, i-cubed, USDA, USGS, AEX, GeoEye, Getmapping, Aerogrid, IGN, IGP, UPR-EGP, and the GIS User Community'
+  });
+
+  // MAPA SIN CONTROL DE ZOOM POR DEFECTO
+  const map = L.map('map', {
+    center: [41.8204, 1.8326],
+    zoom: 9,
+    zoomControl: false, 
+    layers: [openTopoLayer]
+  });
+
+  // ZOOM Y SELECTOR COLOCADOS EN LA DERECHA
+  L.control.zoom({ position: 'topright' }).addTo(map);
+
+  const baseMaps = {
+    "OpenTopoMap": openTopoLayer,
+    "OpenStreetMap": osmLayer,
+    "Esri Satèl·lit": esriSatelliteLayer
+  };
+
+  L.control.layers(baseMaps, null, { position: 'topright' }).addTo(map);
+
+  const markers = {};
+  const polylines = {};
+  const pilotTracks = {};
+  const pilotsData = {};
+  const visiblePilots = {};
+
+  const FIVE_MINUTES_MS = 5 * 60 * 1000;
+
+  function toggleSidebar() {
+    const sidebar = document.getElementById('sidebar');
+    const showBtn = document.getElementById('show-sidebar-btn');
+
+    sidebar.classList.toggle('collapsed');
+
+    if (sidebar.classList.contains('collapsed')) {
+      showBtn.style.display = 'block';
+    } else {
+      showBtn.style.display = 'none';
+    }
+
+    setTimeout(() => { map.invalidateSize(); }, 300);
+  }
+
+  async function loadInitialLocations() {
+    const fiveMinutesAgo = new Date(Date.now() - FIVE_MINUTES_MS).toISOString();
+
+    const { data } = await supabaseClient
+      .from('pilots_locations')
+      .select('*')
+      .gte('updated_at', fiveMinutesAgo)
+      .order('updated_at', { ascending: true });
+
+    if (data) {
+      data.forEach(processNewPoint);
+    }
+  }
+
+  // CREADOR DE ICONO SEGÚN NOMBRE Y VELOCIDAD
+  function createPilotIconHtml(displayName, currentSpeed) {
+    const cleanName = (displayName || 'P').toString().trim();
+    const upperName = cleanName.toUpperCase();
+
+    // 1. Detección de Vehículos especiales
+    if (upperName.startsWith('BUS')) {
+      return `
+        <span class="vehicle-emoji-icon">🚌</span>
+        <span class="pilot-label">${cleanName}</span>
+      `;
+    }
+    
+    if (upperName.startsWith('FURGO')) {
+      return `
+        <span class="vehicle-emoji-icon">🚐</span>
+        <span class="pilot-label">${cleanName}</span>
+      `;
+    }
+
+    // 2. Icono circular con Inicial (Gris < 10 km/h, Verde >= 10 km/h)
+    const initial = cleanName.charAt(0).toUpperCase();
+    const bgColor = currentSpeed >= 10.0 ? '#28a745' : '#6c757d';
+
+    return `
+      <div class="pilot-circle-icon" style="background-color: ${bgColor};">
+        ${initial}
+      </div>
+      <span class="pilot-label">${cleanName}</span>
+    `;
+  }
+
+  function processNewPoint(point) {
+    const { pilot_id, name, latitude, longitude, altitude, speed, updated_at } = point;
+    const pointTime = new Date(updated_at).getTime();
+
+    const displayName = (name && name.toString().trim() !== '') ? name.toString().trim() : pilot_id;
+
+    pilotsData[pilot_id] = { ...point, displayName };
+
+    if (visiblePilots[pilot_id] === undefined) {
+      visiblePilots[pilot_id] = true;
+    }
+
+    if (!pilotTracks[pilot_id]) {
+      pilotTracks[pilot_id] = [];
+    }
+    pilotTracks[pilot_id].push({ lat: latitude, lng: longitude, time: pointTime });
+
+    const now = Date.now();
+    pilotTracks[pilot_id] = pilotTracks[pilot_id].filter(p => (now - p.time) <= FIVE_MINUTES_MS);
+
+    const latLngs = pilotTracks[pilot_id].map(p => [p.lat, p.lng]);
+
+    // Crear/Actualizar línea
+    if (!polylines[pilot_id]) {
+      polylines[pilot_id] = L.polyline(latLngs, {
+        color: '#ff3300',
+        weight: 4,
+        opacity: 0.8,
+        smoothFactor: 1
+      });
+    } else {
+      polylines[pilot_id].setLatLngs(latLngs);
+    }
+
+    // Crear/Actualizar Marcador
+    const currentSpeed = speed || 0;
+    const iconHtml = createPilotIconHtml(displayName, currentSpeed);
+
+    const customIcon = L.divIcon({
+      className: 'custom-pilot-marker',
+      html: iconHtml,
+      iconSize: [160, 32],
+      iconAnchor: [15, 16]
+    });
+
+    if (!markers[pilot_id]) {
+      markers[pilot_id] = L.marker([latitude, longitude], { icon: customIcon });
+    } else {
+      markers[pilot_id].setLatLng([latitude, longitude]);
+      markers[pilot_id].setIcon(customIcon);
+    }
+
+    markers[pilot_id].bindPopup(`
+      <b style="font-size: 1.1em">${displayName}</b><br>
+      Velocidad: <b>${currentSpeed.toFixed(1)} km/h</b><br>
+      Altitud: <b>${altitude ? altitude.toFixed(0) : 0} m</b>
+    `);
+
+    updatePilotVisibilityOnMap(pilot_id);
+    renderPilotsList();
+  }
+
+  function updatePilotVisibilityOnMap(pilot_id) {
+    const isVisible = visiblePilots[pilot_id];
+
+    if (isVisible) {
+      if (markers[pilot_id] && !map.hasLayer(markers[pilot_id])) {
+        map.addLayer(markers[pilot_id]);
+      }
+      if (polylines[pilot_id] && !map.hasLayer(polylines[pilot_id])) {
+        map.addLayer(polylines[pilot_id]);
+      }
+    } else {
+      if (markers[pilot_id] && map.hasLayer(markers[pilot_id])) {
+        map.removeLayer(markers[pilot_id]);
+      }
+      if (polylines[pilot_id] && map.hasLayer(polylines[pilot_id])) {
+        map.removeLayer(polylines[pilot_id]);
+      }
+    }
+  }
+
+  function togglePilotVisibility(pilot_id, isChecked) {
+    visiblePilots[pilot_id] = isChecked;
+    updatePilotVisibilityOnMap(pilot_id);
+    updateSelectAllCheckboxState();
+  }
+
+  function toggleSelectAll(isChecked) {
+    Object.keys(pilotsData).forEach(pilot_id => {
+      visiblePilots[pilot_id] = isChecked;
+      updatePilotVisibilityOnMap(pilot_id);
+    });
+    renderPilotsList();
+  }
+
+  function toggleSelectAllAction() {
+    Object.keys(pilotsData).forEach(pilot_id => {
+      visiblePilots[pilot_id] = !visiblePilots[pilot_id];
+      updatePilotVisibilityOnMap(pilot_id);
+    });
+    renderPilotsList();
+    updateSelectAllCheckboxState();
+  }
+
+  function updateSelectAllCheckboxState() {
+    const allIds = Object.keys(pilotsData);
+    if (allIds.length === 0) return;
+    const allChecked = allIds.every(id => visiblePilots[id]);
+    document.getElementById('select-all-checkbox').checked = allChecked;
+  }
+
+  function renderPilotsList() {
+    const listContainer = document.getElementById('pilots-list');
+    const filterText = document.getElementById('search').value.toLowerCase();
+    listContainer.innerHTML = '';
+
+    Object.values(pilotsData).forEach(pilot => {
+      const displayName = pilot.displayName;
+
+      if (displayName.toLowerCase().includes(filterText)) {
+        const isChecked = visiblePilots[pilot.pilot_id] !== false;
+
+        const card = document.createElement('div');
+        card.className = 'pilot-card';
+
+        card.innerHTML = `
+          <input type="checkbox" ${isChecked ? 'checked' : ''} onchange="togglePilotVisibility('${pilot.pilot_id}', this.checked)">
+          <div class="pilot-info" onclick="focusPilot('${pilot.pilot_id}')">
+            <div class="pilot-name">${displayName}</div>
+            <div class="pilot-stats">
+              ⚡ ${pilot.speed ? pilot.speed.toFixed(1) : 0} km/h | 🏔️ ${pilot.altitude ? pilot.altitude.toFixed(0) : 0} m
+            </div>
+          </div>
+        `;
+        listContainer.appendChild(card);
+      }
+    });
+  }
+
+  function focusPilot(pilot_id) {
+    const pilot = pilotsData[pilot_id];
+    if (pilot && markers[pilot_id]) {
+      if (!visiblePilots[pilot_id]) {
+        togglePilotVisibility(pilot_id, true);
+        renderPilotsList();
+      }
+      map.flyTo([pilot.latitude, pilot.longitude], 16);
+      markers[pilot_id].openPopup();
+    }
+  }
+
+  function filterPilots() {
+    renderPilotsList();
+  }
+
+  supabaseClient
+    .channel('schema-db-changes')
+    .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'pilots_locations' }, (payload) => {
+      processNewPoint(payload.new);
+    })
+    .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'pilots_locations' }, (payload) => {
+      processNewPoint(payload.new);
+    })
+    .subscribe();
+
+  loadInitialLocations();
+</script>
+
+</body>
+</html>
