@@ -32,7 +32,7 @@
       position: relative;
     }
 
-    /* BARRA LATERAL (OCULTA POR DEFECTO) */
+    /* BARRA LATERAL */
     #sidebar {
       width: 320px;
       height: 100%;
@@ -46,7 +46,7 @@
     }
 
     #sidebar.collapsed {
-      margin-left: -320px; /* Esconde la barra lateral */
+      margin-left: -320px;
     }
 
     .sidebar-header {
@@ -68,7 +68,6 @@
       margin: 0;
     }
 
-    /* BOTÓN DENTRO DEL SIDEBAR */
     .btn-hide-panel {
       background-color: #2a2a35;
       color: #fff;
@@ -84,9 +83,8 @@
       background-color: #3a3a4c;
     }
 
-    /* BOTÓN FLOTANTE PARA DESPLEGAR PANEL (VISIBLE DE INICIO) */
     #show-sidebar-btn {
-      display: block; /* Muestra el botón de inicio */
+      display: block;
       position: absolute;
       top: 10px;
       left: 10px;
@@ -105,19 +103,22 @@
       background-color: #2a2a35;
     }
 
-    .search-box {
+    .search-box, .sort-select {
       width: 100%;
       padding: 8px 12px;
       border-radius: 6px;
       border: 1px solid #3a3a4c;
       background-color: #2a2a35;
       color: #fff;
-      font-size: 14px;
-      margin-bottom: 10px;
+      font-size: 13px;
+      margin-bottom: 8px;
       outline: none;
     }
 
-    /* CONTROLES DE SELECCIÓN GENERAL */
+    .sort-select {
+      cursor: pointer;
+    }
+
     .selection-controls {
       display: flex;
       align-items: center;
@@ -143,11 +144,22 @@
       text-decoration: underline;
     }
 
-    /* LISTA DE PILOTOS */
+    /* LISTA Y SECCIONES */
     #pilots-list {
       flex: 1;
       overflow-y: auto;
       padding: 10px;
+    }
+
+    .section-title {
+      font-size: 0.8rem;
+      font-weight: bold;
+      color: #00d2ff;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      margin: 12px 0 6px 4px;
+      padding-bottom: 4px;
+      border-bottom: 1px solid #2a2a35;
     }
 
     .pilot-card {
@@ -175,12 +187,34 @@
       font-weight: bold;
       font-size: 14px;
       color: #fff;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
     }
 
     .pilot-stats {
       font-size: 12px;
       color: #aaa;
-      margin-top: 2px;
+      margin-top: 4px;
+    }
+
+    /* BADGES DE ESTADO */
+    .status-badge {
+      font-size: 10px;
+      padding: 2px 6px;
+      border-radius: 4px;
+      font-weight: bold;
+      text-transform: uppercase;
+    }
+
+    .status-pendent { background-color: #e6a23c; color: #fff; }
+    .status-aterrat_ok { background-color: #67c23a; color: #fff; }
+    .status-recollida { background-color: #e65100; color: #fff; }
+    .status-no_recollida { background-color: #409eff; color: #fff; }
+    .status-sos { background-color: #f56c6c; color: #fff; animation: blink 1s infinite; }
+
+    @keyframes blink {
+      50% { opacity: 0.5; }
     }
 
     /* MAPA */
@@ -190,7 +224,7 @@
       width: 100%;
     }
 
-    /* ESTILOS DE MARCADORES Y ETIQUETAS */
+    /* ESTILOS DE MARCADORES */
     .custom-pilot-marker {
       display: flex;
       align-items: center;
@@ -233,18 +267,23 @@
 <body>
 
 <div id="app-container">
-  <!-- BOTÓN FLOTANTE PAra ABRIR EL PANEL -->
   <button id="show-sidebar-btn" onclick="toggleSidebar()">▶ Mostrar</button>
 
-  <!-- BARRA LATERAL (INICIA OCULTA) -->
   <div id="sidebar" class="collapsed">
     <div class="sidebar-header">
       <div class="sidebar-header-top">
-        <h2>Pilots Actius</h2>
+        <h2>Seguiment en Viu</h2>
         <button class="btn-hide-panel" onclick="toggleSidebar()">◀ Ocultar</button>
       </div>
 
-      <input type="text" id="search" class="search-box" placeholder="Buscar piloto..." oninput="filterPilots()">
+      <input type="text" id="search" class="search-box" placeholder="Buscar piloto o vehículo..." oninput="filterPilots()">
+
+      <!-- SELECTOR DE ORDENACIÓN -->
+      <select id="sort-select" class="sort-select" onchange="filterPilots()">
+        <option value="STATUS">📊 Ordenar per Estat (Alertes primer)</option>
+        <option value="NAME">🔤 Ordenar per Nom (A-Z)</option>
+        <option value="SPEED">⚡ Ordenar per Velocitat (Més ràpid)</option>
+      </select>
 
       <div class="selection-controls">
         <label>
@@ -258,7 +297,6 @@
     <div id="pilots-list"></div>
   </div>
 
-  <!-- MAPA -->
   <div id="map"></div>
 </div>
 
@@ -267,7 +305,6 @@
   const SUPABASE_KEY = 'sb_publishable_0CQFFsTpM2rw7_mMEo0IUw_1NTVEnEE';
   const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
-  // DECLARACIÓN DE CAPAS DE MAPA
   const osmLayer = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
     maxZoom: 19,
     attribution: '© OpenStreetMap contributors'
@@ -306,9 +343,19 @@
   const pilotTracks = {};
   const pilotsData = {};
   const visiblePilots = {};
+  const animatingMarkers = {};
   let initialBoundsFitDone = false;
 
   const FIVE_MINUTES_MS = 5 * 60 * 1000;
+
+  // Prioridad de ordenación por estado (1 = Máxima urgencia)
+  const STATUS_PRIORITY = {
+    'SOS': 1,
+    'RECOLLIDA': 2,
+    'PENDENT': 3,
+    'ATERRAT_OK': 4,
+    'NO_RECOLLIDA': 5
+  };
 
   function toggleSidebar() {
     const sidebar = document.getElementById('sidebar');
@@ -340,8 +387,12 @@
     }
   }
 
-  // GENERADOR DE HTML DE ICONO (Detección de BUS/FURGO e inicial con color por velocidad en km/h)
-  function createPilotIconHtml(displayName, currentSpeedKmH) {
+  function isVehicle(name) {
+    const upper = (name || '').toString().trim().toUpperCase();
+    return upper.startsWith('BUS') || upper.startsWith('FURGO');
+  }
+
+  function createPilotIconHtml(displayName, currentSpeedKmH, status) {
     const cleanName = (displayName || 'P').toString().trim();
     const upperName = cleanName.toUpperCase();
 
@@ -360,7 +411,9 @@
     }
 
     const inicial = cleanName.charAt(0).toUpperCase();
-    const colorAvatar = currentSpeedKmH >= 10.0 ? '#28a745' : '#6c757d';
+    let colorAvatar = currentSpeedKmH >= 10.0 ? '#28a745' : '#6c757d';
+
+    if (status === 'SOS') colorAvatar = '#f56c6c';
 
     return `
       <div class="pilot-avatar" style="background-color:${colorAvatar};">${inicial}</div>
@@ -369,14 +422,14 @@
   }
 
   function processNewPoint(point, isInitialLoad = false) {
-    const { pilot_id, latitude, longitude, altitude, speed, updated_at } = point;
+    const { pilot_id, latitude, longitude, altitude, speed, status, updated_at } = point;
     const pointTime = new Date(updated_at).getTime();
 
-    // CONVERSIÓN DE M/S A KM/H (Multiplicar por 3.6)
     const rawSpeed = speed || 0;
     const currentSpeedKmH = rawSpeed * 3.6;
+    const currentStatus = status || 'PENDENT';
 
-    pilotsData[pilot_id] = { ...point, speedKmH: currentSpeedKmH };
+    pilotsData[pilot_id] = { ...point, speedKmH: currentSpeedKmH, status: currentStatus };
 
     if (visiblePilots[pilot_id] === undefined) {
       visiblePilots[pilot_id] = true;
@@ -404,7 +457,7 @@
     }
 
     const displayName = pilot_id;
-    const iconHtml = createPilotIconHtml(displayName, currentSpeedKmH);
+    const iconHtml = createPilotIconHtml(displayName, currentSpeedKmH, currentStatus);
 
     const customIcon = L.divIcon({
       className: 'custom-pilot-marker',
@@ -419,13 +472,47 @@
         map.setView([latitude, longitude], 14);
       }
     } else {
-      markers[pilot_id].setLatLng([latitude, longitude]);
-      markers[pilot_id].setIcon(customIcon);
+      if (isInitialLoad) {
+        markers[pilot_id].setLatLng([latitude, longitude]);
+        markers[pilot_id].setIcon(customIcon);
+      } else {
+        if (animatingMarkers[pilot_id]) {
+          clearInterval(animatingMarkers[pilot_id]);
+        }
+
+        const startLatLng = markers[pilot_id].getLatLng();
+        const targetLat = latitude;
+        const targetLng = longitude;
+
+        const durationMs = 15000;
+        const stepIntervalMs = 1000;
+        const totalSteps = durationMs / stepIntervalMs;
+        let currentStep = 0;
+
+        const deltaLat = (targetLat - startLatLng.lat) / totalSteps;
+        const deltaLng = (targetLng - startLatLng.lng) / totalSteps;
+
+        markers[pilot_id].setIcon(customIcon);
+
+        animatingMarkers[pilot_id] = setInterval(() => {
+          currentStep++;
+          const intermediateLat = startLatLng.lat + (deltaLat * currentStep);
+          const intermediateLng = startLatLng.lng + (deltaLng * currentStep);
+
+          markers[pilot_id].setLatLng([intermediateLat, intermediateLng]);
+
+          if (currentStep >= totalSteps) {
+            clearInterval(animatingMarkers[pilot_id]);
+            delete animatingMarkers[pilot_id];
+          }
+        }, stepIntervalMs);
+      }
     }
 
     markers[pilot_id].bindPopup(`
       <b style="font-size: 1.1em">${displayName}</b><br>
-      Velocidad: <b>${currentSpeedKmH.toFixed(1)} km/h</b><br>
+      Estat: <b>${currentStatus}</b><br>
+      Velocitat: <b>${currentSpeedKmH.toFixed(1)} km/h</b><br>
       Altitud: <b>${altitude ? altitude.toFixed(0) : 0} m</b>
     `);
 
@@ -503,29 +590,82 @@
   function renderPilotsList() {
     const listContainer = document.getElementById('pilots-list');
     const filterText = document.getElementById('search').value.toLowerCase();
+    const sortCriterion = document.getElementById('sort-select').value;
     listContainer.innerHTML = '';
 
-    Object.values(pilotsData).forEach(pilot => {
-      const displayName = pilot.pilot_id;
+    let pilots = [];
+    let vehicles = [];
 
-      if (displayName.toLowerCase().includes(filterText)) {
-        const isChecked = visiblePilots[pilot.pilot_id] !== false;
-
-        const card = document.createElement('div');
-        card.className = 'pilot-card';
-
-        card.innerHTML = `
-          <input type="checkbox" ${isChecked ? 'checked' : ''} onchange="togglePilotVisibility('${pilot.pilot_id}', this.checked)">
-          <div class="pilot-info" onclick="focusPilot('${pilot.pilot_id}')">
-            <div class="pilot-name">${displayName}</div>
-            <div class="pilot-stats">
-              ⚡ ${pilot.speedKmH ? pilot.speedKmH.toFixed(1) : '0.0'} km/h | 🏔️ ${pilot.altitude ? pilot.altitude.toFixed(0) : 0} m
-            </div>
-          </div>
-        `;
-        listContainer.appendChild(card);
+    Object.values(pilotsData).forEach(item => {
+      if (item.pilot_id.toLowerCase().includes(filterText)) {
+        if (isVehicle(item.pilot_id)) {
+          vehicles.push(item);
+        } else {
+          pilots.push(item);
+        }
       }
     });
+
+    // LÓGICA DE ORDENACIÓN SEGÚN LA SELECCIÓN
+    const sortFunction = (a, b) => {
+      if (sortCriterion === 'STATUS') {
+        const priorityA = STATUS_PRIORITY[a.status] || 99;
+        const priorityB = STATUS_PRIORITY[b.status] || 99;
+        if (priorityA !== priorityB) {
+          return priorityA - priorityB;
+        }
+        return a.pilot_id.localeCompare(b.pilot_id);
+      } else if (sortCriterion === 'SPEED') {
+        return (b.speedKmH || 0) - (a.speedKmH || 0);
+      } else { // NAME (A-Z)
+        return a.pilot_id.localeCompare(b.pilot_id);
+      }
+    };
+
+    pilots.sort(sortFunction);
+    vehicles.sort(sortFunction);
+
+    // RENDERIZAR PILOTOS
+    if (pilots.length > 0) {
+      const header = document.createElement('div');
+      header.className = 'section-title';
+      header.innerText = `Pilots (${pilots.length})`;
+      listContainer.appendChild(header);
+
+      pilots.forEach(pilot => createCard(pilot, listContainer));
+    }
+
+    // RENDERIZAR VEHÍCULOS DE LOGÍSTICA
+    if (vehicles.length > 0) {
+      const header = document.createElement('div');
+      header.className = 'section-title';
+      header.innerText = `Logística (${vehicles.length})`;
+      listContainer.appendChild(header);
+
+      vehicles.forEach(vehicle => createCard(vehicle, listContainer));
+    }
+  }
+
+  function createCard(pilot, container) {
+    const isChecked = visiblePilots[pilot.pilot_id] !== false;
+    const statusClass = `status-${(pilot.status || 'pendent').toLowerCase()}`;
+
+    const card = document.createElement('div');
+    card.className = 'pilot-card';
+
+    card.innerHTML = `
+      <input type="checkbox" ${isChecked ? 'checked' : ''} onchange="togglePilotVisibility('${pilot.pilot_id}', this.checked)">
+      <div class="pilot-info" onclick="focusPilot('${pilot.pilot_id}')">
+        <div class="pilot-name">
+          <span>${pilot.pilot_id}</span>
+          <span class="status-badge ${statusClass}">${pilot.status || 'PENDENT'}</span>
+        </div>
+        <div class="pilot-stats">
+          ⚡ ${pilot.speedKmH ? pilot.speedKmH.toFixed(1) : '0.0'} km/h | 🏔️ ${pilot.altitude ? pilot.altitude.toFixed(0) : 0} m
+        </div>
+      </div>
+    `;
+    container.appendChild(card);
   }
 
   function focusPilot(pilot_id) {
