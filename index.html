@@ -421,7 +421,7 @@
     `;
   }
 
-  function processNewPoint(point, isInitialLoad = false) {
+function processNewPoint(point, isInitialLoad = false) {
     const { pilot_id, latitude, longitude, altitude, speed, status, updated_at } = point;
     const pointTime = new Date(updated_at).getTime();
 
@@ -438,23 +438,29 @@
     if (!pilotTracks[pilot_id]) {
       pilotTracks[pilot_id] = [];
     }
-    pilotTracks[pilot_id].push({ lat: latitude, lng: longitude, time: pointTime });
 
     const now = Date.now();
+    // Limpiar puntos viejos de más de 5 minutos
     pilotTracks[pilot_id] = pilotTracks[pilot_id].filter(p => (now - p.time) <= FIVE_MINUTES_MS);
 
-    const latLngs = pilotTracks[pilot_id].map(p => [p.lat, p.lng]);
+    // Función auxiliar para repintar la línea con los puntos guardados + posición actual del marcador
+    const updatePolyline = (currentMarkerLat, currentMarkerLng) => {
+      const latLngs = pilotTracks[pilot_id].map(p => [p.lat, p.lng]);
+      if (currentMarkerLat !== undefined && currentMarkerLng !== undefined) {
+        latLngs.push([currentMarkerLat, currentMarkerLng]);
+      }
 
-    if (!polylines[pilot_id]) {
-      polylines[pilot_id] = L.polyline(latLngs, {
-        color: '#ff3300',
-        weight: 4,
-        opacity: 0.8,
-        smoothFactor: 1
-      });
-    } else {
-      polylines[pilot_id].setLatLngs(latLngs);
-    }
+      if (!polylines[pilot_id]) {
+        polylines[pilot_id] = L.polyline(latLngs, {
+          color: '#ff3300',
+          weight: 4,
+          opacity: 0.8,
+          smoothFactor: 1
+        });
+      } else {
+        polylines[pilot_id].setLatLngs(latLngs);
+      }
+    };
 
     const displayName = pilot_id;
     const iconHtml = createPilotIconHtml(displayName, currentSpeedKmH, currentStatus);
@@ -467,25 +473,37 @@
     });
 
     if (!markers[pilot_id]) {
+      // Primer punto recibido para este piloto
+      pilotTracks[pilot_id].push({ lat: latitude, lng: longitude, time: pointTime });
       markers[pilot_id] = L.marker([latitude, longitude], { icon: customIcon });
+      updatePolyline(latitude, longitude);
+
       if (!isInitialLoad && !initialBoundsFitDone) {
         map.setView([latitude, longitude], 14);
       }
     } else {
       if (isInitialLoad) {
+        // Carga inicial masiva sin animación
+        pilotTracks[pilot_id].push({ lat: latitude, lng: longitude, time: pointTime });
         markers[pilot_id].setLatLng([latitude, longitude]);
         markers[pilot_id].setIcon(customIcon);
+        updatePolyline(latitude, longitude);
       } else {
+        // Cancelar animación anterior si aún no había terminado
         if (animatingMarkers[pilot_id]) {
           clearInterval(animatingMarkers[pilot_id]);
         }
 
         const startLatLng = markers[pilot_id].getLatLng();
+        
+        // Guardamos el punto inicial confirmado en el track fijo
+        pilotTracks[pilot_id].push({ lat: startLatLng.lat, lng: startLatLng.lng, time: pointTime });
+
         const targetLat = latitude;
         const targetLng = longitude;
 
         const durationMs = 15000;
-        const stepIntervalMs = 1000;
+        const stepIntervalMs = 500; // Paso más suave (cada 0.5s)
         const totalSteps = durationMs / stepIntervalMs;
         let currentStep = 0;
 
@@ -499,7 +517,9 @@
           const intermediateLat = startLatLng.lat + (deltaLat * currentStep);
           const intermediateLng = startLatLng.lng + (deltaLng * currentStep);
 
+          // Mover marcador Y actualizar traza al mismo punto
           markers[pilot_id].setLatLng([intermediateLat, intermediateLng]);
+          updatePolyline(intermediateLat, intermediateLng);
 
           if (currentStep >= totalSteps) {
             clearInterval(animatingMarkers[pilot_id]);
@@ -519,7 +539,7 @@
     updatePilotVisibilityOnMap(pilot_id);
     renderPilotsList();
   }
-
+  
   function fitMapToActivePilots() {
     if (initialBoundsFitDone) return;
 
