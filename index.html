@@ -426,7 +426,7 @@ function processNewPoint(point, isInitialLoad = false) {
     const pointTime = new Date(updated_at).getTime();
 
     const rawSpeed = speed || 0;
-    const currentSpeedKmH = rawSpeed * 3.6;
+    const currentSpeedKmH = rawSpeed * 1;
     const currentStatus = status || 'PENDENT';
 
     pilotsData[pilot_id] = { ...point, speedKmH: currentSpeedKmH, status: currentStatus };
