@@ -201,6 +201,301 @@
       margin-top: 4px;
     }
 
+    .card-actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      width: 100%;
+      margin-top: 8px;
+    }
+
+    .card-actions select,
+    .card-actions button {
+      min-width: 0;
+      padding: 7px 8px;
+      border: 1px solid #3a3a4c;
+      border-radius: 5px;
+      background: #1e1e24;
+      color: #fff;
+      font-size: 12px;
+    }
+
+    .card-actions select {
+      flex: 1;
+    }
+
+    .card-actions button {
+      cursor: pointer;
+      background: #087e96;
+    }
+
+    .card-actions button:hover {
+      background: #0699b6;
+    }
+
+    .pickup-dialog {
+      width: min(420px, calc(100vw - 32px));
+      margin: auto;
+      padding: 20px;
+      border: 1px solid #3a3a4c;
+      border-radius: 10px;
+      background: #1e1e24;
+      color: #fff;
+    }
+
+    .pickup-dialog::backdrop {
+      background: rgba(0, 0, 0, 0.65);
+    }
+
+    .pickup-dialog h2 {
+      margin-bottom: 16px;
+      font-size: 18px;
+    }
+
+    .pickup-dialog label {
+      display: block;
+      margin-bottom: 6px;
+      color: #ddd;
+    }
+
+    .pickup-dialog select {
+      width: 100%;
+      padding: 10px;
+      border: 1px solid #555;
+      border-radius: 5px;
+      background: #2a2a35;
+      color: #fff;
+      font-size: 15px;
+    }
+
+    .pickup-dialog textarea {
+      width: 100%;
+      min-height: 90px;
+      margin-top: 6px;
+      padding: 10px;
+      border: 1px solid #555;
+      border-radius: 5px;
+      background: #2a2a35;
+      color: #fff;
+      font: inherit;
+      resize: vertical;
+    }
+
+    .pickup-dialog-actions {
+      display: flex;
+      justify-content: flex-end;
+      gap: 8px;
+      margin-top: 18px;
+    }
+
+    .pickup-dialog-actions button {
+      padding: 9px 12px;
+      border: 0;
+      border-radius: 5px;
+      color: #fff;
+      background: #087e96;
+      cursor: pointer;
+    }
+
+    .pickup-dialog-actions button[type="button"] {
+      background: #555;
+    }
+
+    .assigned-board {
+      position: fixed;
+      inset: 16px 16px 16px auto;
+      z-index: 1200;
+      display: none;
+      width: min(560px, calc(100vw - 32px));
+      overflow-y: auto;
+      padding: 18px;
+      border: 1px solid #3a3a4c;
+      border-radius: 10px;
+      background: #1e1e24;
+      color: #fff;
+      box-shadow: 0 8px 28px rgba(0, 0, 0, 0.55);
+    }
+
+    .assigned-board.open {
+      display: block;
+    }
+
+    .assigned-board-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      margin-bottom: 16px;
+    }
+
+    .assigned-board-header h2 {
+      color: #00d2ff;
+      font-size: 20px;
+    }
+
+    .assigned-board-close {
+      padding: 7px 10px;
+      border: 1px solid #3a3a4c;
+      border-radius: 5px;
+      background: #2a2a35;
+      color: #fff;
+      cursor: pointer;
+    }
+
+    .assigned-board-toggle {
+      position: fixed;
+      right: 16px;
+      bottom: 18px;
+      z-index: 1150;
+      min-width: 270px;
+      padding: 16px 20px;
+      border: 2px solid #b9f6ca;
+      border-radius: 10px;
+      background: #188038;
+      color: #fff;
+      box-shadow: 0 4px 14px rgba(0, 0, 0, 0.45);
+      cursor: pointer;
+      font-size: 17px;
+      font-weight: bold;
+    }
+
+    .assigned-board-toggle:hover {
+      background: #116b2d;
+    }
+
+    .assigned-board-toggle-count {
+      display: inline-flex;
+      min-width: 26px;
+      height: 26px;
+      align-items: center;
+      justify-content: center;
+      margin-left: 8px;
+      border-radius: 50%;
+      background: #fff;
+      color: #145c2b;
+    }
+
+    .assigned-board-notice {
+      margin-bottom: 14px;
+      padding: 14px;
+      border: 1px solid #71c98b;
+      border-radius: 8px;
+      background: #183b25;
+      color: #d8ffe2;
+      font-size: 16px;
+      font-weight: bold;
+      text-align: center;
+    }
+
+    .assigned-board-legend {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px 16px;
+      margin-bottom: 16px;
+      padding: 10px;
+      border-radius: 6px;
+      background: #15151b;
+      color: #ddd;
+      font-size: 12px;
+    }
+
+    .assigned-board-legend span {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .assigned-board-legend i {
+      width: 11px;
+      height: 11px;
+      border-radius: 50%;
+    }
+
+    .legend-pending {
+      background: #9a6500;
+    }
+
+    .legend-picked-up {
+      background: #27823a;
+    }
+
+    .assigned-vehicle-group {
+      margin-bottom: 16px;
+      padding: 12px;
+      border: 1px solid #3a3a4c;
+      border-radius: 8px;
+      background: #252530;
+    }
+
+    .assigned-vehicle-group h3 {
+      margin-bottom: 10px;
+      color: #fff;
+      font-size: 16px;
+    }
+
+    .assigned-vehicle-capacity {
+      margin: 0 0 10px;
+      padding: 9px 10px;
+      border: 1px solid #27823a;
+      border-radius: 6px;
+      background: #183b25;
+      color: #d8ffe2;
+      font-size: 13px;
+      font-weight: bold;
+    }
+
+    .assigned-vehicle-capacity.full {
+      border-color: #f56c6c;
+      background: #4a2020;
+      color: #ffdede;
+    }
+
+    .assigned-vehicle-capacity.unknown {
+      border-color: #7c7c88;
+      background: #30303a;
+      color: #ddd;
+    }
+
+    .assigned-pilot-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      padding: 10px 0;
+      border-top: 1px solid #3a3a4c;
+    }
+
+    .assigned-pilot-name {
+      color: #fff;
+      font-weight: bold;
+    }
+
+    .assigned-pilot-location {
+      margin-top: 4px;
+      color: #bbb;
+      font-size: 12px;
+    }
+
+    .assigned-pilot-state {
+      flex-shrink: 0;
+      padding: 5px 8px;
+      border-radius: 5px;
+      background: #9a6500;
+      color: #fff;
+      font-size: 12px;
+      font-weight: bold;
+    }
+
+    .assigned-pilot-state.picked-up {
+      background: #27823a;
+    }
+
+    .assigned-board-empty {
+      padding: 18px;
+      color: #ccc;
+      text-align: center;
+    }
+
     /* BADGES DE ESTADO */
     .status-badge {
       font-size: 10px;
@@ -272,6 +567,15 @@
 
 <div id="app-container">
   <button id="show-sidebar-btn" onclick="toggleSidebar()">▶ Mostrar</button>
+  <button
+    id="assigned-board-toggle"
+    class="assigned-board-toggle"
+    type="button"
+    onclick="toggleAssignedBoard()"
+  >
+    🚐 PILOTOS A RECOGER
+    <span id="assigned-board-toggle-count" class="assigned-board-toggle-count">0</span>
+  </button>
 
   <div id="sidebar" class="collapsed">
     <div class="sidebar-header">
@@ -300,6 +604,22 @@
 
     <div id="pilots-list"></div>
   </div>
+
+  <section id="assigned-board" class="assigned-board" aria-label="Pilotos asignados">
+    <div class="assigned-board-header">
+      <h2>Recogidas por transporte</h2>
+      <button
+        class="assigned-board-close"
+        type="button"
+        onclick="toggleAssignedBoard(false)"
+      >Cerrar</button>
+    </div>
+    <div class="assigned-board-legend" aria-label="Leyenda de estados">
+      <span><i class="legend-pending"></i>Pendiente de recogida</span>
+      <span><i class="legend-picked-up"></i>Recogido</span>
+    </div>
+    <div id="assigned-board-content" aria-live="polite"></div>
+  </section>
 
   <div id="map"></div>
 </div>
@@ -358,6 +678,9 @@
   const visiblePilots = {};
   const animatingMarkers = {};
   let initialBoundsFitDone = false;
+  let assignedBoardOpen = false;
+  let receivedInitialAssignments = false;
+  let previousPendingAssignmentIds = new Set();
 
   const FIVE_MINUTES_MS = 5 * 60 * 1000;
 
@@ -384,25 +707,142 @@
     setTimeout(() => { map.invalidateSize(); }, 300);
   }
 
-  function isVehicle(name) {
-    const upper = (name || '').toString().trim().toUpperCase();
-    return upper.startsWith('BUS') || upper.startsWith('FURGO');
+  function toggleAssignedBoard(forceOpen) {
+    assignedBoardOpen = forceOpen ?? !assignedBoardOpen;
+    document.getElementById('assigned-board').classList.toggle(
+      'open',
+      assignedBoardOpen
+    );
+    if (assignedBoardOpen) renderAssignedPickups();
   }
 
-  function createPilotIconHtml(displayName, currentSpeedKmH, status) {
-    const cleanName = (displayName || 'P').toString().trim();
-    const upperName = cleanName.toUpperCase();
+  function renderAssignedPickups() {
+    const groups = new Map();
+    const pendingAssignmentIds = new Set();
 
-    if (upperName.startsWith('BUS')) {
-      return `
-        <span class="vehicle-emoji-icon">🚌</span>
-        <span class="pilot-label">${cleanName}</span>
-      `;
+    Object.values(pilotsData).forEach(pilot => {
+      if (
+        !pilot.assignedDriverId ||
+        !['assigned', 'picked_up'].includes(pilot.driverStatus)
+      ) {
+        return;
+      }
+      if (pilot.driverStatus === 'assigned') {
+        pendingAssignmentIds.add(pilot._documentId || pilot.pilot_id);
+      }
+      if (!groups.has(pilot.assignedDriverId)) {
+        groups.set(pilot.assignedDriverId, []);
+      }
+      groups.get(pilot.assignedDriverId).push(pilot);
+    });
+
+    document.getElementById('assigned-board-toggle-count').textContent =
+      String(pendingAssignmentIds.size);
+
+    if (!assignedBoardOpen) return;
+
+    const content = document.getElementById('assigned-board-content');
+    content.replaceChildren();
+
+    if (pendingAssignmentIds.size === 0) {
+      const notice = document.createElement('p');
+      notice.className = 'assigned-board-notice';
+      notice.textContent = 'PENDENT DE REBRE INSTRUCCIONS';
+      content.appendChild(notice);
     }
-    
-    if (upperName.startsWith('FURGO')) {
+
+    if (groups.size === 0) {
+      const empty = document.createElement('p');
+      empty.className = 'assigned-board-empty';
+      empty.textContent = 'Encara no hi ha cap pilot assignat a un transport.';
+      content.appendChild(empty);
+      return;
+    }
+
+    [...groups.keys()].sort((a, b) => a.localeCompare(b)).forEach(vehicleId => {
+      const group = document.createElement('section');
+      group.className = 'assigned-vehicle-group';
+      const heading = document.createElement('h3');
+      heading.textContent = `🚐 ${vehicleId}`;
+      group.appendChild(heading);
+
+      const vehicle = pilotsData[vehicleId];
+      const capacityValue = Number(vehicle?.capacity);
+      const hasCapacity = Number.isInteger(capacityValue) && capacityValue > 0;
+      const occupied = groups.get(vehicleId).length;
+      const available = hasCapacity
+        ? Math.max(0, capacityValue - occupied)
+        : null;
+      const capacitySummary = document.createElement('p');
+      capacitySummary.className = 'assigned-vehicle-capacity';
+      if (!hasCapacity) {
+        capacitySummary.classList.add('unknown');
+        capacitySummary.textContent =
+          `Places ocupades: ${occupied} · Capacitat no indicada`;
+      } else if (available === 0) {
+        capacitySummary.classList.add('full');
+        capacitySummary.textContent =
+          `TRANSPORT PLE · ${occupied}/${capacityValue} places ocupades`;
+      } else {
+        capacitySummary.textContent =
+          `Places ocupades: ${occupied}/${capacityValue} · ` +
+          `Disponibles: ${available}`;
+      }
+      group.appendChild(capacitySummary);
+
+      groups.get(vehicleId)
+        .sort((a, b) => a.pilot_id.localeCompare(b.pilot_id))
+        .forEach(pilot => {
+          const row = document.createElement('div');
+          row.className = 'assigned-pilot-row';
+          const details = document.createElement('div');
+          const name = document.createElement('div');
+          name.className = 'assigned-pilot-name';
+          name.textContent = pilot.pilot_id;
+          name.tabIndex = 0;
+          name.title = 'Centrar en el mapa';
+          name.addEventListener('click', () => {
+            toggleAssignedBoard(false);
+            focusPilot(pilot.pilot_id);
+          });
+          const location = document.createElement('div');
+          location.className = 'assigned-pilot-location';
+          location.textContent =
+            `Ubicación: ${pilot.latitude ?? '--'}, ${pilot.longitude ?? '--'}`;
+          details.append(name, location);
+          if (
+            typeof pilot.organizationMessage === 'string' &&
+            pilot.organizationMessage.trim()
+          ) {
+            const instruction = document.createElement('div');
+            instruction.className = 'assigned-pilot-location';
+            instruction.textContent =
+              `Instrucciones: ${pilot.organizationMessage.trim()}`;
+            details.appendChild(instruction);
+          }
+
+          const state = document.createElement('span');
+          const pickedUp = pilot.driverStatus === 'picked_up';
+          state.className = `assigned-pilot-state${pickedUp ? ' picked-up' : ''}`;
+          state.textContent = pickedUp ? 'RECOGIDO' : 'PENDIENTE';
+          row.append(details, state);
+          group.appendChild(row);
+        });
+      content.appendChild(group);
+    });
+  }
+
+  function isVehicle(item) {
+    return item?.role === 'transport';
+  }
+
+  function createPilotIconHtml(displayName, currentSpeedKmH, status, point) {
+    const cleanName = (displayName || 'P').toString().trim();
+    if (isVehicle(point)) {
+      const capacity = Number(point.capacity) || 0;
+      const icon = capacity > 12 ? '🚌' : capacity > 5 ? '🚐' : '🚗';
       return `
-        <span class="vehicle-emoji-icon">🚐</span>
+        <span class="vehicle-emoji-icon">${icon}</span>
         <span class="pilot-label">${cleanName}</span>
       `;
     }
@@ -426,7 +866,11 @@
     const currentSpeedKmH = rawSpeed * 1;
     const currentStatus = status || 'PENDENT';
 
-    pilotsData[pilot_id] = { ...point, speedKmH: currentSpeedKmH, status: currentStatus };
+    pilotsData[pilot_id] = {
+      ...point,
+      speedKmH: currentSpeedKmH,
+      status: currentStatus
+    };
 
     if (visiblePilots[pilot_id] === undefined) {
       visiblePilots[pilot_id] = true;
@@ -458,7 +902,12 @@
     };
 
     const displayName = pilot_id;
-    const iconHtml = createPilotIconHtml(displayName, currentSpeedKmH, currentStatus);
+    const iconHtml = createPilotIconHtml(
+      displayName,
+      currentSpeedKmH,
+      currentStatus,
+      point
+    );
 
     const customIcon = L.divIcon({
       className: 'custom-pilot-marker',
@@ -520,6 +969,10 @@
 
     markers[pilot_id].bindPopup(`
       <b style="font-size: 1.1em">${displayName}</b><br>
+      Perfil: <b>${isVehicle(point) ? 'Transport' : 'Pilot'}</b><br>
+      ${isVehicle(point) && Number.isInteger(point.capacity)
+        ? `Places: <b>${point.capacity}</b><br>`
+        : ''}
       Estat: <b>${currentStatus}</b><br>
       Velocitat: <b>${currentSpeedKmH.toFixed(1)} km/h</b><br>
       Altitud: <b>${altitude ? altitude.toFixed(0) : 0} m</b>
@@ -606,12 +1059,10 @@
     let vehicles = [];
 
     Object.values(pilotsData).forEach(item => {
-      if (item.pilot_id.toLowerCase().includes(filterText)) {
-        if (isVehicle(item.pilot_id)) {
-          vehicles.push(item);
-        } else {
-          pilots.push(item);
-        }
+      if (isVehicle(item)) {
+        vehicles.push(item);
+      } else if (item.pilot_id.toLowerCase().includes(filterText)) {
+        pilots.push(item);
       }
     });
 
@@ -639,7 +1090,7 @@
       header.innerText = `Pilots (${pilots.length})`;
       listContainer.appendChild(header);
 
-      pilots.forEach(pilot => createCard(pilot, listContainer));
+      pilots.forEach(pilot => createCard(pilot, listContainer, vehicles));
     }
 
     if (vehicles.length > 0) {
@@ -648,30 +1099,233 @@
       header.innerText = `Logística (${vehicles.length})`;
       listContainer.appendChild(header);
 
-      vehicles.forEach(vehicle => createCard(vehicle, listContainer));
+      vehicles.forEach(vehicle => createCard(vehicle, listContainer, vehicles));
     }
   }
 
-  function createCard(pilot, container) {
+  function createCard(pilot, container, vehicles) {
     const isChecked = visiblePilots[pilot.pilot_id] !== false;
     const statusClass = `status-${(pilot.status || 'pendent').toLowerCase()}`;
 
     const card = document.createElement('div');
     card.className = 'pilot-card';
 
-    card.innerHTML = `
-      <input type="checkbox" ${isChecked ? 'checked' : ''} onchange="togglePilotVisibility('${pilot.pilot_id}', this.checked)">
-      <div class="pilot-info" onclick="focusPilot('${pilot.pilot_id}')">
-        <div class="pilot-name">
-          <span>${pilot.pilot_id}</span>
-          <span class="status-badge ${statusClass}">${pilot.status || 'PENDENT'}</span>
-        </div>
-        <div class="pilot-stats">
-          ⚡ ${pilot.speedKmH ? pilot.speedKmH.toFixed(1) : '0.0'} km/h | 🏔️ ${pilot.altitude ? pilot.altitude.toFixed(0) : 0} m
-        </div>
-      </div>
-    `;
+    const checkbox = document.createElement('input');
+    checkbox.type = 'checkbox';
+    checkbox.checked = isChecked;
+    checkbox.addEventListener('change', () => {
+      togglePilotVisibility(pilot.pilot_id, checkbox.checked);
+    });
+
+    const info = document.createElement('div');
+    info.className = 'pilot-info';
+    info.addEventListener('click', () => focusPilot(pilot.pilot_id));
+
+    const heading = document.createElement('div');
+    heading.className = 'pilot-name';
+    const name = document.createElement('span');
+    name.textContent = pilot.pilot_id;
+    const badge = document.createElement('span');
+    badge.className = `status-badge ${statusClass}`;
+    badge.textContent = pilot.status || 'PENDENT';
+    heading.append(name, badge);
+
+    const stats = document.createElement('div');
+    stats.className = 'pilot-stats';
+    stats.textContent =
+      `⚡ ${pilot.speedKmH ? pilot.speedKmH.toFixed(1) : '0.0'} km/h | 🏔️ ${pilot.altitude ? pilot.altitude.toFixed(0) : 0} m`;
+    if (isVehicle(pilot)) {
+      stats.textContent += Number.isInteger(pilot.capacity)
+        ? ` | Places: ${pilot.capacity}`
+        : ' | Places: no indicades';
+    }
+    info.append(heading, stats);
+    card.append(checkbox, info);
+
+    const actions = document.createElement('div');
+    actions.className = 'card-actions';
+    const documentId = pilot._documentId || encodeURIComponent(pilot.pilot_id);
+
+    if (isVehicle(pilot)) {
+      const pickupButton = document.createElement('button');
+      pickupButton.type = 'button';
+      pickupButton.textContent = 'Seleccionar piloto a recoger';
+      pickupButton.addEventListener('click', () => {
+        selectPilotForVehicle(pilot.pilot_id);
+      });
+
+      const messageButton = document.createElement('button');
+      messageButton.type = 'button';
+      messageButton.textContent = 'Enviar mensaje al vehículo';
+      messageButton.addEventListener('click', () => {
+        sendOrganizationMessage(pilot.pilot_id, documentId);
+      });
+      actions.append(pickupButton, messageButton);
+    } else {
+      const vehicleSelect = document.createElement('select');
+      vehicleSelect.setAttribute('aria-label', `Transporte asignado a ${pilot.pilot_id}`);
+      const noVehicle = document.createElement('option');
+      noVehicle.value = '';
+      noVehicle.textContent = 'Sin transporte';
+      vehicleSelect.appendChild(noVehicle);
+
+      vehicles.forEach(vehicle => {
+        const option = document.createElement('option');
+        option.value = vehicle.pilot_id;
+        option.textContent = vehicle.pilot_id;
+        vehicleSelect.appendChild(option);
+      });
+      vehicleSelect.value = pilot.assignedDriverId || '';
+
+      const assignButton = document.createElement('button');
+      assignButton.type = 'button';
+      assignButton.textContent = 'Asignar';
+      assignButton.disabled = vehicles.length === 0;
+      assignButton.addEventListener('click', () => {
+        assignPilotToVehicle(
+          documentId,
+          vehicleSelect.value
+        );
+      });
+
+      const messageButton = document.createElement('button');
+      messageButton.type = 'button';
+      messageButton.textContent = 'Enviar mensaje';
+      messageButton.addEventListener('click', () => {
+        sendOrganizationMessage(pilot.pilot_id, documentId);
+      });
+
+      actions.append(vehicleSelect, assignButton, messageButton);
+    }
+
+    card.appendChild(actions);
     container.appendChild(card);
+  }
+
+  async function assignPilotToVehicle(
+    documentId,
+    vehicleId,
+    instruction = ''
+  ) {
+    if (!vehicleId) {
+      alert('Selecciona un vehículo antes de asignar el piloto.');
+      return false;
+    }
+
+    try {
+      const assignment = {
+        assignedDriverId: vehicleId,
+        driverStatus: 'assigned'
+      };
+      if (instruction) {
+        assignment.organizationMessage = instruction;
+        assignment.organizationMessageId =
+          `${Date.now()}-${Math.random().toString(36).slice(2)}`;
+      }
+      await db.collection('pilots_locations').doc(documentId).set(
+        assignment,
+        { merge: true }
+      );
+      alert(
+        instruction
+          ? `Piloto asignado a ${vehicleId} con instrucciones.`
+          : `Piloto asignado a ${vehicleId}.`
+      );
+      return true;
+    } catch (error) {
+      console.error('Error asignando transporte:', error);
+      alert(`No se ha podido asignar el vehículo: ${error.message}`);
+      return false;
+    }
+  }
+
+  function selectPilotForVehicle(vehicleId) {
+    const pilots = Object.values(pilotsData)
+      .filter(pilot => !isVehicle(pilot))
+      .sort((a, b) => a.pilot_id.localeCompare(b.pilot_id));
+
+    if (pilots.length === 0) {
+      alert('No hay pilotos disponibles para asignar.');
+      return;
+    }
+
+    const dialog = document.createElement('dialog');
+    dialog.className = 'pickup-dialog';
+    const form = document.createElement('form');
+    const heading = document.createElement('h2');
+    heading.textContent = `Seleccionar piloto para ${vehicleId}`;
+    const label = document.createElement('label');
+    label.textContent = 'Piloto a recoger';
+    const select = document.createElement('select');
+    select.required = true;
+    select.setAttribute('aria-label', 'Piloto a recoger');
+
+    const instructionLabel = document.createElement('label');
+    instructionLabel.textContent = 'Instrucciones para el transporte (opcional)';
+    instructionLabel.style.marginTop = '14px';
+    const instructionInput = document.createElement('textarea');
+    instructionInput.maxLength = 500;
+    instructionInput.placeholder = 'Ej.: Vuelve a GOL';
+    instructionInput.setAttribute(
+      'aria-label',
+      'Instrucciones para el transporte'
+    );
+    instructionLabel.appendChild(instructionInput);
+
+    pilots.forEach(pilot => {
+      const option = document.createElement('option');
+      option.value = pilot._documentId;
+      option.textContent = pilot.pilot_id;
+      select.appendChild(option);
+    });
+
+    const actions = document.createElement('div');
+    actions.className = 'pickup-dialog-actions';
+    const cancelButton = document.createElement('button');
+    cancelButton.type = 'button';
+    cancelButton.textContent = 'Cancelar';
+    cancelButton.addEventListener('click', () => dialog.close());
+    const assignButton = document.createElement('button');
+    assignButton.type = 'submit';
+    assignButton.textContent = 'Asignar recogida';
+    actions.append(cancelButton, assignButton);
+    label.appendChild(select);
+    form.append(heading, label, instructionLabel, actions);
+    dialog.appendChild(form);
+    document.body.appendChild(dialog);
+
+    dialog.addEventListener('close', () => dialog.remove(), { once: true });
+    form.addEventListener('submit', async event => {
+      event.preventDefault();
+      assignButton.disabled = true;
+      const success = await assignPilotToVehicle(
+        select.value,
+        vehicleId,
+        instructionInput.value.trim()
+      );
+      if (success) {
+        dialog.close();
+      } else {
+        assignButton.disabled = false;
+      }
+    });
+    dialog.showModal();
+  }
+
+  async function sendOrganizationMessage(pilotId, documentId) {
+    const text = window.prompt(`Mensaje para ${pilotId}:`);
+    if (text === null || !text.trim()) return;
+
+    try {
+      await db.collection('pilots_locations').doc(documentId).set({
+        organizationMessage: text.trim(),
+        organizationMessageId: `${Date.now()}-${Math.random().toString(36).slice(2)}`
+      }, { merge: true });
+      alert(`Mensaje enviado a ${pilotId}.`);
+    } catch (error) {
+      console.error('Error enviando mensaje:', error);
+      alert(`No se ha podido enviar el mensaje: ${error.message}`);
+    }
   }
 
   function focusPilot(pilot_id) {
@@ -696,9 +1350,51 @@
     snapshot.docChanges().forEach((change) => {
       if (change.type === "added" || change.type === "modified") {
         const data = change.doc.data();
-        processNewPoint({ ...data, pilot_id: data.pilot_id || change.doc.id }, isInitialSnapshot);
+        processNewPoint({
+          ...data,
+          pilot_id: data.pilot_id || change.doc.id,
+          _documentId: change.doc.id
+        }, isInitialSnapshot);
+      } else if (change.type === "removed") {
+        const pilot = pilotsData[change.doc.data().pilot_id || change.doc.id];
+        if (pilot) {
+          const pilotId = pilot.pilot_id;
+          if (markers[pilotId] && map.hasLayer(markers[pilotId])) {
+            map.removeLayer(markers[pilotId]);
+          }
+          if (polylines[pilotId] && map.hasLayer(polylines[pilotId])) {
+            map.removeLayer(polylines[pilotId]);
+          }
+          if (animatingMarkers[pilotId]) {
+            clearInterval(animatingMarkers[pilotId]);
+            delete animatingMarkers[pilotId];
+          }
+          delete markers[pilotId];
+          delete polylines[pilotId];
+          delete pilotTracks[pilotId];
+          delete visiblePilots[pilotId];
+          delete pilotsData[pilotId];
+        }
       }
     });
+    const currentPendingAssignmentIds = new Set(
+      Object.values(pilotsData)
+        .filter(
+          pilot => pilot.assignedDriverId && pilot.driverStatus === 'assigned'
+        )
+        .map(pilot => pilot._documentId || pilot.pilot_id)
+    );
+    const hasNewPendingAssignment = [...currentPendingAssignmentIds]
+      .some(id => !previousPendingAssignmentIds.has(id));
+    if (
+      (!receivedInitialAssignments && currentPendingAssignmentIds.size > 0) ||
+      (receivedInitialAssignments && hasNewPendingAssignment)
+    ) {
+      toggleAssignedBoard(true);
+    }
+    previousPendingAssignmentIds = currentPendingAssignmentIds;
+    receivedInitialAssignments = true;
+    renderAssignedPickups();
     if (isInitialSnapshot) {
       fitMapToActivePilots();
       isInitialSnapshot = false;
